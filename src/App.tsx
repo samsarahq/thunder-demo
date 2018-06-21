@@ -1,8 +1,26 @@
 import * as React from 'react';
+import { Connection, graphql, GraphQLData, ThunderProvider } from 'thunder-react'; 
 import './App.css';
 
 import EventsPage from './components/events_page/EventsPage';
 import logo from './logo.svg';
+
+export interface IResult {
+  output: string; 
+}
+
+const ConnectedEventsPage = graphql<
+  GraphQLData<IResult>, 
+  IResult
+>(
+  EventsPage, `query test {
+    messages {
+      text
+    }
+  }`
+);
+
+const connection = new Connection(async () => new WebSocket("ws://localhost:3030/graphql"));
 
 class App extends React.Component {
 
@@ -16,7 +34,10 @@ class App extends React.Component {
         <p className="App-intro">
           Enter any repo in the form <code>owner/repo_name</code> to watch its activities!
         </p>
-        <EventsPage />
+        {/* <EventsPage /> */}
+        <ThunderProvider connection={connection}>
+          <ConnectedEventsPage />
+        </ThunderProvider>
       </div>
     );
   }

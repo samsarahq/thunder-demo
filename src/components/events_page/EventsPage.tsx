@@ -1,24 +1,32 @@
 import * as React from "react";
+import { GraphQLData } from 'thunder-react'; 
 
 import { get } from "../../api";
 import Event from "../event/Event";
+import { IResult } from "../../App";
 
 import './events_page.css'; 
 
 interface State {
   url?: string;
   events?: any[];
-  source?: string; 
+  source: string; 
 }
 
-class EventsPage extends React.Component<{}, State> {
+class EventsPage extends React.Component<GraphQLData<IResult>, State> {
   private timer: NodeJS.Timer; 
   private timerRefresh: number; 
+  private prevSource: string;
+  private stallCount: number; 
 
-  constructor(props: {}) {
+  constructor(props: GraphQLData<IResult>) {
     super(props);
-    this.state = {};
-    this.timerRefresh = 5000; 
+    this.state = {
+      source: 'samsarahq/thunder-demo', 
+    };
+    this.timerRefresh = 100000; 
+    this.prevSource = ''; 
+    this.stallCount = 0; 
   }
 
   componentDidMount() {
@@ -31,8 +39,15 @@ class EventsPage extends React.Component<{}, State> {
   }
   
   refreshSource() {
-    // const url = "https://api.github.com/repos/samsarahq/thunder-demo/events";
-    // const url = "https://api.github.com/repos/facebookresearch/DensePose/events";
+    if (this.state.source === this.prevSource) {
+      this.stallCount += 1; 
+      if (this.stallCount < 5) {
+        return;
+      } else {
+        this.stallCount = 0; 
+      }
+    }
+
     const url = `https://api.github.com/repos/${this.state.source}/events`;
     get(url).then((json: any[]) => {
       console.log(json);
@@ -43,6 +58,7 @@ class EventsPage extends React.Component<{}, State> {
   }
 
   handleInputChange = (event: React.FormEvent<HTMLInputElement>) => {
+    this.prevSource = this.state.source; 
     this.setState({source: event.currentTarget.value})
   }
 
