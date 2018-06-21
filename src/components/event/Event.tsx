@@ -1,4 +1,5 @@
 import * as React from 'react';
+import './event.css'; 
 
 export enum EventType {
   WatchEvent,
@@ -33,9 +34,11 @@ class Event extends React.Component<Props, State> {
     return (
       <div className='Event'>
         <div className='Event-labelText'>{info.labelText}</div>
-        <img className='Event-userAvatar' src={event.actor.avatar_url} height='25' width='25' />
-        <div className='Event-userLogin'>{event.actor.display_login}</div>
-        <div className='Event-type'>{event.type}</div>
+        <div className='Event-userContainer'>
+          <img className='Event-userAvatar' src={event.actor.avatar_url} height='25' width='25' />
+          <div className='Event-userLogin'>{event.actor.display_login}</div>
+        </div>
+        {/* <div className='Event-type'>{event.type}</div> */}
       </div>
     )
   }

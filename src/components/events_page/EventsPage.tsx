@@ -3,6 +3,8 @@ import * as React from "react";
 import { get } from "../../api";
 import Event from "../event/Event";
 
+import './events_page.css'; 
+
 interface State {
   url?: string;
   events?: any[];
@@ -19,6 +21,7 @@ class EventsPage extends React.Component<{}, State> {
   }
 
   public componentDidMount() {
+    this.refreshSource();
     this.timer = setInterval(() => this.refreshSource(), this.timerRefresh);
   }
   
@@ -62,7 +65,7 @@ class EventsPage extends React.Component<{}, State> {
   }
 
   public render() {
-    return <div className='container'>{this.renderEvents()}</div>;
+    return <div className='EventsPage'>{this.renderEvents()}</div>;
   }
 }
 

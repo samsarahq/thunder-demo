@@ -1,0 +1,67 @@
+:root {
+  /* Colors
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --red: #ff5740;
+  --highlight-red: #ffb2b3;
+  --green: #2ac78a;
+  --highlight-green: #5de9b3;
+  --light-blue: #66d9ef;
+  --blue: #288dff;
+  --highlight-blue: #eff7ff;
+  --amber: #f3b743;
+  --tan: #f3f0ec;
+  --yellow: #f4ca77;
+  --dark-yellow: #b79655;
+
+  /* Grayscale */
+  --black: #302f32;
+  --darker-gray: #555555;
+  --dark-gray: #706e72;
+  --gray: #aaa9ab;
+  --light-gray: #d4d3d5;
+  --lighter-gray: #eaeaea;
+  --super-light: #f8f8f8;
+  --white: #ffffff;
+  --charcoal: #131315;
+
+  --primary: var(--red);
+  --text-color: var(--black);
+  --link-color: var(--blue);
+  --input-color: var(--black);
+  --input-focus-border: var(--gray);
+  --placeholder-color: var(--gray);
+
+  /* Util Colors */
+  --success-color: var(--green);
+  --danger-color: #ea4849;
+
+  /* Fonts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --font-family-default: "Nitti Grotesk";
+
+  /* Spacing
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  /* Radius
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --radius: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-round: 100%;
+
+  /* Layout
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --container-left-right-padding: 30px;
+
+  /* Mobile Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --container-left-right-padding-mobile: 15px;
+
+  /* Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+  --sidebar-layout-mobile-toolbar-height: 50px;
+}
