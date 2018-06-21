@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -75,8 +74,11 @@ func (s *Server) registerMutation(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
 	object.FieldFunc("addRepo", func(ctx context.Context, args struct{ RepoName string }) error {
-		_, err := s.db.InsertRow(ctx, &Repo{})
-		return err
+		if val, err := importRepo(args.RepoName); err == nil {
+			s.db.InsertRow(ctx, val)
+			return nil
+		}
+		return errors.New("add repository failed")
 	})
 
 	// object.FieldFunc("deleteEmptyStruct", func(ctx context.Context, args struct{ Id int64 }) error {
@@ -99,7 +101,6 @@ func importRepo(repoName string) (*Repo, error) {
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 	var jsonResp jsonResponse
 	json.Unmarshal(bodyBytes, &jsonResp)
-	fmt.Println(jsonResp)
 	return &Repo{Id: jsonResp.ID, FullName: jsonResp.FullName, ApiJson: bodyBytes}, nil
 }
 
