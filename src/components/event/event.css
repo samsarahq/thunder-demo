@@ -1,22 +1,26 @@
 .Event {
   padding: 20px; 
-  border: 0.5px solid var(--gray);
+  margin: 20px 0px; 
+  border: 0.5px solid var(--light-gray);
   border-radius: 5px; 
   display: flex; 
   flex-direction: row;  
-  justify-content: center; 
+  justify-content: flex-start; 
   align-items: center; 
 }
 
 .Event-labelText {
   font-size: 36px; 
   font-weight: 700; 
-  color: #d4d3d5; 
+  color: var(--light-gray); 
 }
 
 .Event-userContainer {
+  margin-left: 40px; 
   display: flex; 
   flex-direction: row; 
+  justify-content: flex-start;
+  align-content: center; 
 }
 
 .Event-userAvatar {
@@ -26,6 +30,8 @@
 }
 
 .Event-userLogin {
+  margin-left: 10px; 
   font-size: 14px; 
   font-weight: 600; 
+  line-height: 24px; 
 }
