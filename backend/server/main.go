@@ -60,6 +60,11 @@ func (s *Server) registerQuery(schema *schemabuilder.Schema) {
 		}
 		return result, nil
 	})
+
+	obj := schema.Object("Event", Event{})
+	obj.FieldFunc("jsonStr", func(ctx context.Context, event *Event) (string, error) {
+		return string(event.ApiJson), nil
+	})
 }
 
 func (s *Server) registerMutation(schema *schemabuilder.Schema) {
@@ -125,10 +130,12 @@ func importDummyData(db *livesql.LiveDB) {
 		{
 			Id:       int64(1),
 			FullName: "samsarahq/thunder",
+			ApiJson:  []byte(commitJson1),
 		},
 		{
 			Id:       int64(2),
 			FullName: "facebookresearch/DeepPose",
+			ApiJson:  []byte(commitJson1),
 		},
 	}
 	for _, repo := range dummyRepos {

@@ -20,7 +20,7 @@ $ go build -tags 'mysql' -o /usr/local/bin/migrate github.com/golang-migrate/mig
 ```
 Then run
 ```
-migrate -database mysql://root:@tcp(127.0.0.1:3307)/github -path ./db/migrations up
+migrate -database "mysql://root:@tcp(127.0.0.1:3307)/github" -path ./db/migrations up
 ```
 to set-up the database's schema.
 

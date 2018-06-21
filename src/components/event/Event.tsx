@@ -8,8 +8,13 @@ export enum EventType {
   CreateEvent,
 }
 
-interface Props {
-  event: any; 
+export interface EventProps {
+  event: {
+    actor: {
+      avatar_url: string; 
+      display_login: string; 
+    }
+  } 
 }
 
 interface State {
@@ -20,9 +25,9 @@ type EventInfo = {
   labelText: string; 
 }
 
-class Event extends React.Component<Props, State> {
+class Event extends React.Component<EventProps, State> {
 
-  constructor(props: Props) {
+  constructor(props: EventProps) {
     super(props);
     this.state = {
       
@@ -38,31 +43,12 @@ class Event extends React.Component<Props, State> {
           <img className='Event-userAvatar' src={event.actor.avatar_url} height='25' width='25' />
           <div className='Event-userLogin'>{event.actor.display_login}</div>
         </div>
-        {/* <div className='Event-type'>{event.type}</div> */}
       </div>
     )
   }
 
   render() {
-    let event = this.props.event;
-
-    switch (event.type) {
-      case 'PushEvent': {
-        return this.renderPushEvent({labelText: 'COMMIT'});
-      }
-      case 'CreateEvent': {
-        return this.renderPushEvent({labelText: 'CREATE'});
-      }
-      case 'ForkEvent': {
-        return this.renderPushEvent({labelText: 'FORK'});
-      }
-      case 'WatchEvent': {
-        return this.renderPushEvent({labelText: 'WATCH'});
-      }
-      default: {
-        return this.renderPushEvent({labelText: 'COMMIT'});
-      }
-    }
+    return this.renderPushEvent({labelText: 'COMMIT'});
   }
 }
 

@@ -7,6 +7,7 @@ import logo from './logo.svg';
 
 export interface IResult {
   output: string; 
+  events: any[]; 
 }
 
 const ConnectedEventsPage = graphql<
@@ -14,8 +15,11 @@ const ConnectedEventsPage = graphql<
   IResult
 >(
   EventsPage, `query test {
-    messages {
-      text
+    events(repoID: 1) {
+      atMs
+      eventId
+      repoId
+      jsonStr
     }
   }`
 );

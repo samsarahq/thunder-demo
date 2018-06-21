@@ -1,7 +1,6 @@
 import * as React from "react";
 import { GraphQLData } from 'thunder-react'; 
 
-import { get } from "../../api";
 import Event from "../event/Event";
 import { IResult } from "../../App";
 
@@ -14,71 +13,36 @@ interface State {
 }
 
 class EventsPage extends React.Component<GraphQLData<IResult>, State> {
-  private timer: NodeJS.Timer; 
-  private timerRefresh: number; 
-  private prevSource: string;
-  private stallCount: number; 
 
   constructor(props: GraphQLData<IResult>) {
-    super(props);
+    super(props); 
     this.state = {
       source: 'samsarahq/thunder-demo', 
     };
-    this.timerRefresh = 100000; 
-    this.prevSource = ''; 
-    this.stallCount = 0; 
-  }
-
-  componentDidMount() {
-    this.refreshSource();
-    this.timer = setInterval(() => this.refreshSource(), this.timerRefresh);
   }
   
-  componentWillUnmount() {
-    clearInterval(this.timer); 
-  }
-  
-  refreshSource() {
-    if (this.state.source === this.prevSource) {
-      this.stallCount += 1; 
-      if (this.stallCount < 5) {
-        return;
-      } else {
-        this.stallCount = 0; 
-      }
-    }
-
-    const url = `https://api.github.com/repos/${this.state.source}/events`;
-    get(url).then((json: any[]) => {
-      console.log(json);
-      this.setState({
-        events: json, 
-      });
-    }); 
-  }
-
   handleInputChange = (event: React.FormEvent<HTMLInputElement>) => {
-    this.prevSource = this.state.source; 
     this.setState({source: event.currentTarget.value})
   }
 
+  getEvent(event: any) {
+    const eventObj = JSON.parse(event.jsonStr); 
+    console.log(eventObj); 
+    return {
+      actor: {
+        avatar_url: eventObj.author.avatar_url, 
+        display_login: eventObj.author.login, 
+      }
+    };
+  }
+
   renderEvent(event: any) {
-    return <Event event={event} />
+    return <Event event={this.getEvent(event)} />
   }
 
-  renderPushEvent(event: any) {
-    return (
-      <div>
-        <img src={event.actor.avatar_url} height='25' width='25' />
-        <div>{event.actor.display_login}</div>
-        <div className='State'>{event.type}</div>
-      </div>
-    )
-  }
-
-  renderEvents() {
-    if (!this.state.events) return null;
-    return this.state.events.map((event, i) => {
+  renderEvents(events: any[]) {
+    if (!events) return null;
+    return events.map((event, i) => {
       return (
         <div key={`event-${i}`}>
           {this.renderEvent(event)}
@@ -88,6 +52,10 @@ class EventsPage extends React.Component<GraphQLData<IResult>, State> {
   }
 
   render() {
+    if (!this.props.data.value) {
+      return null; 
+    }
+    const events = this.props.data.value.events; 
     return (
       <div className='EventsPage'>
         <input 
@@ -95,7 +63,7 @@ class EventsPage extends React.Component<GraphQLData<IResult>, State> {
           value={this.state.source} 
           onChange={this.handleInputChange}>
         </input>
-        <div className='EventsPage-events'>{this.renderEvents()}</div>
+        <div className='EventsPage-events'>{this.renderEvents(events)}</div>
       </div>
     );
   }
