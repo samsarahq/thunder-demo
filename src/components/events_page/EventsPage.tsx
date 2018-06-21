@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import { get } from "../api";
+import { get } from "../../api";
+import Event from "../event/Event";
 
 interface State {
   url?: string;
@@ -8,30 +9,35 @@ interface State {
 }
 
 class EventsPage extends React.Component<{}, State> {
+  private timer: NodeJS.Timer; 
+  private timerRefresh: number; 
+
   constructor(props: {}) {
     super(props);
     this.state = {};
+    this.timerRefresh = 10000; 
   }
 
   public componentDidMount() {
-    const url = "https://api.github.com/repos/lbkchen/thunder-demo/events";
+    this.timer = setInterval(() => this.refreshSource(), this.timerRefresh);
+  }
+  
+  public componentWillUnmount() {
+    clearInterval(this.timer); 
+  }
+  
+  public refreshSource() {
+    const url = "https://api.github.com/repos/samsarahq/thunder-demo/events";
     get(url).then((json: any[]) => {
       console.log(json);
       this.setState({
         events: json
       });
-    });
+    }); 
   }
 
   public renderEvent(event: any) {
-    switch (event.type) {
-      case 'PushEvent': {
-        return this.renderPushEvent(event);
-      }
-      default: {
-        return this.renderPushEvent(event);
-      }
-    }
+    return <Event event={event} />
   }
 
   public renderPushEvent(event: any) {

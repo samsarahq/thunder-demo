@@ -1,7 +1,7 @@
 import * as React from 'react';
 import './App.css';
 
-import EventsPage from './components/EventsPage';
+import EventsPage from './components/events_page/EventsPage';
 import logo from './logo.svg';
 
 class App extends React.Component {
