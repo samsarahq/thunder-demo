@@ -34,7 +34,7 @@ func doEvery(d time.Duration, f func(time.Time)) {
 }
 
 func lol(t time.Time) {
-	url := fmt.Sprintf("https://api.github.com/repos/facebookresearch/DensePose/commits?access_token=%v", "854d8e3bf5ba1e368f8c8d04462be38986746e58")
+	url := fmt.Sprintf("https://api.github.com/repos/facebookresearch/DensePose/commits?access_token=%v", "07daf881d73d37b6c72f024d4bb2f749b603f0d1")
 	fmt.Println(url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
