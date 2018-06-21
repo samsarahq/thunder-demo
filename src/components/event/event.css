@@ -7,6 +7,28 @@
   flex-direction: row;  
   justify-content: flex-start; 
   align-items: center; 
+
+  animation-name: Event-fade-in-down; 
+  animation-duration: 200ms; 
+  animation-timing-function: ease-in;
+  animation-fill-mode: both; 
+
+  transition: 100ms; 
+  transform-origin: center; 
+}
+
+.Event:hover {
+  border-color: var(--black); 
+  background-color: var(--black);
+  cursor: pointer; 
+}
+
+.Event:hover > .Event-commitMsg {
+  color: white; 
+}
+
+.Event:hover > .Event-userContainer {
+  color: white; 
 }
 
 .Event-labelText {
@@ -21,6 +43,7 @@
   flex-direction: row; 
   justify-content: flex-start;
   align-content: center; 
+  color: var(--black); 
 }
 
 .Event-userAvatar {
@@ -34,4 +57,23 @@
   font-size: 14px; 
   font-weight: 600; 
   line-height: 24px; 
+}
+
+.Event-commitMsg {
+  text-align: left; 
+  margin-left: 40px; 
+  font-size: 13px; 
+  font-family: 'Menlo'; 
+  color: var(--darker-gray); 
+}
+
+@keyframes Event-fade-in-down {
+  from {
+    opacity: 0; 
+    transform: translateY(-100px); 
+  }
+  to {
+    opacity: 1; 
+    transform: translateY(0px); 
+  }
 }

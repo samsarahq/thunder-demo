@@ -14,7 +14,10 @@ export interface EventProps {
       avatar_url: string; 
       display_login: string; 
     }
+    commit_msg: string; 
+    url: string; 
   } 
+  index: number; 
 }
 
 interface State {
@@ -37,13 +40,16 @@ class Event extends React.Component<EventProps, State> {
   renderPushEvent(info: EventInfo) {
     let event = this.props.event; 
     return (
-      <div className='Event'>
+      <a href={event.url} target='_blank'>
+        <div className='Event' style={{animationDelay: `${this.props.index*100}ms`}}>
         <div className='Event-labelText'>{info.labelText}</div>
         <div className='Event-userContainer'>
           <img className='Event-userAvatar' src={event.actor.avatar_url} height='25' width='25' />
           <div className='Event-userLogin'>{event.actor.display_login}</div>
         </div>
+        <div className='Event-commitMsg'>{event.commit_msg}</div>
       </div>
+      </a>
     )
   }
 

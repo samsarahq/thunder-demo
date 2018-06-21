@@ -32,12 +32,14 @@ class EventsPage extends React.Component<GraphQLData<IResult>, State> {
       actor: {
         avatar_url: eventObj.author.avatar_url, 
         display_login: eventObj.author.login, 
-      }
+      }, 
+      commit_msg: eventObj.commit.message, 
+      url: eventObj.html_url, 
     };
   }
 
-  renderEvent(event: any) {
-    return <Event event={this.getEvent(event)} />
+  renderEvent(event: any, index: number) {
+    return <Event event={this.getEvent(event)} index={index}/>
   }
 
   renderEvents(events: any[]) {
@@ -45,7 +47,7 @@ class EventsPage extends React.Component<GraphQLData<IResult>, State> {
     return events.map((event, i) => {
       return (
         <div key={`event-${i}`}>
-          {this.renderEvent(event)}
+          {this.renderEvent(event, i)}
         </div>
       );
     });

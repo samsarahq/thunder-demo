@@ -5,3 +5,7 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+a:hover, a:visited, a:link, a:active {
+    text-decoration: none;
+}
