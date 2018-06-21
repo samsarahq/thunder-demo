@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/samsarahq/thunder/graphql"
@@ -79,6 +83,24 @@ func (s *Server) registerMutation(schema *schemabuilder.Schema) {
 	// 	return s.db.DeleteRow(ctx, &EmptyStruct{Id: args.Id})
 	// })
 
+}
+
+type jsonResponse struct {
+	ID       int64  `json:"id"`
+	FullName string `json:"full_name"`
+}
+
+func importRepo(repoName string) (*Repo, error) {
+	resp, err := http.Get("https://api.github.com/repos/" + repoName)
+	if err != nil {
+		return nil, errors.New("http get to github api for repo name")
+	}
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	var jsonResp jsonResponse
+	json.Unmarshal(bodyBytes, &jsonResp)
+	fmt.Println(jsonResp)
+	return &Repo{Id: jsonResp.ID, FullName: jsonResp.FullName, ApiJson: bodyBytes}, nil
 }
 
 func (s *Server) importRepo(repoName string) error {
