@@ -1,1 +1,1 @@
-DROP TABLE messages;
+DROP TABLE games;

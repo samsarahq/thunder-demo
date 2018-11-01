@@ -24,11 +24,11 @@ you will need to `go get` each of the packages e.g. `go get github.com/go-sql-dr
 
 Then run the following to set-up the database's schema:
 ```
-migrate -database 'mysql://root:@tcp(127.0.0.1:3307)/chat' -path ./db/migrations up
+migrate -database 'mysql://root:@tcp(127.0.0.1:3307)/sudoku' -path ./db/migrations up
 ```
 Now you can access the database with `mysql -h 127.0.0.1 --port=3307 -uroot
-chat`. Try inserting a new message by running
-`INSERT INTO messages (text) VALUES ("Hello, world!");`
+sudoku`. Try inserting a new message by running
+`INSERT INTO games (state, data) VALUES (0, "testdata");`
 
 ## Running the server
 
