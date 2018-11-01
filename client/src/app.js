@@ -19,7 +19,7 @@ window.arrayToPuzzle = (arr) => {
   let output = "";
   arr.forEach((r, i) => {
     r.forEach((c, j) => {
-      output += (c == null) ? "." : '' + c;
+      output += (c === null) ? "." : '' + c;
       if (j < r.length - 1)
         output += '|';
     });
@@ -31,7 +31,7 @@ window.arrayToPuzzle = (arr) => {
 }
 
 let testPuzzle = "6|.|.|.|.|3|.|.|9\n.|.|4|.|1|.|6|.|7\n1|.|.|.|.|.|.|.|.\n.|.|.|4|.|9|.|5|.\n.|2|.|.|.|.|.|7|.\n9|.|7|.|.|.|8|.|4\n.|9|.|.|8|.|.|.|.\n.|8|.|3|.|2|.|9|.\n.|.|.|.|.|.|5|2|.";
-console.log(testPuzzle == window.arrayToPuzzle(window.puzzleToArray(testPuzzle)));
+console.log(testPuzzle === window.arrayToPuzzle(window.puzzleToArray(testPuzzle)));
 
 
 const Editor = React.createClass({
