@@ -12,10 +12,11 @@ and [Node](https://nodejs.org/).
 
 To start the database, run `docker-compose -f db/docker-compose.yml up` to
 start a MySQL server on port 3307, properly configured for use with Thunder. 
+- you may have to run `docker stop <other_mysql_container>` (run `docker ps` to find it)
 
 Then, install [migrate](https://github.com/golang-migrate/migrate/tree/master/cli) using:
 ```
-$ go get -u -d github.com/golang-migrate/migrate/cli github.com/lib/pq
+$ go get -u -d github.com/golang-migrate/migrate/cli github.com/lib/pq github.com/go-sql-driver/mysql
 $ go build -tags 'mysql' -o /usr/local/bin/migrate github.com/golang-migrate/migrate/cli
 ```
 Then run
