@@ -38,6 +38,14 @@ func checkPuzzle(puzzle string) (bool) {
 func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
+	object.FieldFunc("game", func(ctx context.Context, args struct{ Id int64 }) (*Game, error) {
+		var result *Game
+		if err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil); err !=nil {
+			return nil, err
+		}
+		return result, nil
+	})
+
 	object.FieldFunc("games", func(ctx context.Context) ([]*Game, error) {
 		var result []*Game
 		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
