@@ -33,77 +33,23 @@ window.arrayToPuzzle = (arr) => {
 let testPuzzle = "6|.|.|.|.|3|.|.|9\n.|.|4|.|1|.|6|.|7\n1|.|.|.|.|.|.|.|.\n.|.|.|4|.|9|.|5|.\n.|2|.|.|.|.|.|7|.\n9|.|7|.|.|.|8|.|4\n.|9|.|.|8|.|.|.|.\n.|8|.|3|.|2|.|9|.\n.|.|.|.|.|.|5|2|.";
 console.log(testPuzzle === window.arrayToPuzzle(window.puzzleToArray(testPuzzle)));
 
-
-const Editor = React.createClass({
-  getInitialState() {
-    return {text: ''};
-  },
-
-  onSubmit(e) {
-    mutate({
-      query: '{ addMessage(text: $text) }',
-      variables: { text: this.state.text },
-    }).then(() => {
-      this.setState({text: ''});
-    });
-  },
-
-  render() {
-    return (
-      <div>
-        <input type="text" value={this.state.text} onChange={e => this.setState({text: e.target.value})} />
-        <button onClick={this.onSubmit}>Submit</button>
-      </div>
-    );
-  },
-});
-
-function deleteMessage(id) {
-  mutate({
-    query: '{ deleteMessage(id: $id) }',
-    variables: { id },
-  });
-}
-
-function addReaction(messageId, reaction) {
-  mutate({
-    query: '{ addReaction(messageId: $messageId, reaction: $reaction) }',
-    variables: { messageId, reaction },
-  });
-}
-
-let Messages = function(props) {
+let Game = function(props) {
   return (
-    <div>
-      {props.data.value.messages.map(({id, text, reactions}) =>
-        <p key={id}>{text}
-          <button onClick={() => deleteMessage(id)}>X</button>
-          {reactions.map(({reaction, count}) =>
-            <button onClick={() => addReaction(id, reaction)}>{reaction} x{count}</button>
-          )}
-        </p>
-      )}
-      <Editor />
-    </div>
+    <div>team snake</div>
   );
 }
-Messages = connectGraphQL(Messages, () => ({
-  query: `
-  {
-    messages {
-      id, text
-      reactions { reaction count }
-    }
-  }`,
-  variables: {},
-  onlyValidData: true,
-}));
+
+// Game = connectGraphQL(Game, () => ({
+//   query: ``,
+//   variables: {},
+//   onlyValidData: true,
+// }));
 
 function App() {
   if (window.location.pathname === "/graphiql") {
     return <GraphiQLWithFetcher />;
   } else {
-    return <Messages />;
+    return <Game />;
   }
 }
 
