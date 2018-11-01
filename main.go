@@ -24,12 +24,6 @@ type Game struct {
 	Data string
 }
 
-func generatePuzzle() (string) {
-	mutGrid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
-	grid := mutGrid.DataString()
-	return grid
-}
-
 func checkPuzzle(puzzle string) (bool) {
 	grid := sudoku.LoadSDK(puzzle)
 	return grid.Solved()
@@ -59,16 +53,28 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
 	object.FieldFunc("createGame", func(ctx context.Context, args struct{ Data string }) error {
-		_, err := s.db.InsertRow(ctx, &Game{Data: args.Data})
+		grid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
+		_, err := s.db.InsertRow(ctx, &Game{Data: grid.DataString()})
 		return err
 	})
 
 	type updateGameArgs struct {
 		Id int64
-		Data string
+		Row int16
+		Col int16
+		Val int16
 	}
 	object.FieldFunc("updateGame", func(ctx context.Context, args updateGameArgs) error {
-		err := s.db.UpdateRow(ctx, &Game{Id: args.Id, Data: args.Data,})
+		var game *Game
+		if err := s.db.QueryRow(ctx, &game, sqlgen.Filter{"id": args.Id}, nil); err != nil {
+			return err
+		}
+
+		grid := sudoku.MutableLoadSDK(game.Data)
+		grid.MutableCell(int(args.Row),int(args.Col)).SetNumber(int(args.Val))
+		game.Data = grid.DataString()
+
+		err := s.db.UpdateRow(ctx, game)
 		return err
 	})
 }
