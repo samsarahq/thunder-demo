@@ -13,6 +13,7 @@ import (
 	"github.com/samsarahq/thunder/graphql/schemabuilder"
 	"github.com/samsarahq/thunder/livesql"
 	"github.com/samsarahq/thunder/sqlgen"
+	"github.com/jkomoros/sudoku"
 )
 
 type Server struct {
@@ -39,6 +40,18 @@ type Reaction struct {
 	Reaction string `graphql:",key"`
 	Count    int
 }
+
+func generatePuzzle() (string) {
+	mutGrid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
+	grid := mutGrid.DataString()
+	return grid
+}
+
+func checkPuzzle(puzzle string) (bool) {
+	grid := sudoku.LoadSDK(puzzle)
+	return grid.Solved()
+}
+
 
 func (s *Server) registerMessage(schema *schemabuilder.Schema) {
 	object := schema.Object("Message", Message{})
