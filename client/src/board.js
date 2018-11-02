@@ -33,7 +33,7 @@ export default class SudokuBoard extends React.Component {
 }
   
   componentWillMount() {
-    window.onkeydown = this.handleKeyDown
+    document.addEventListener('keydown',this.handleKeyDown)
   }
 
   handleCellChange = (x,y,val) => {
@@ -54,6 +54,7 @@ export default class SudokuBoard extends React.Component {
   }
 
   handleKeyDown = (event) => {
+    console.log({ event })
     let {x, y} = this.state
     switch(event.key) {
       case "ArrowUp": y = Math.max(y - 1, 0); break;
