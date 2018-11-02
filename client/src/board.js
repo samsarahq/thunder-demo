@@ -41,7 +41,6 @@ export default class SudokuBoard extends React.Component {
   }
 
   handleKeyDown = (event) => {
-    console.log({ event })
     let {x, y} = this.state
     switch(event.key) {
       case "ArrowUp": y = Math.max(y - 1, 0); break;
@@ -91,11 +90,28 @@ const BoardCell = (props) => {
     background: '#bdc3c7'
   };
 
+  const disabledSelectedStyle =
+    props.playerState &&
+    props.disabled &&
+    { ...style, ...disabledStyle}
+
   const invalidStyle = !props.valid && {
     background: '#e74c3c'
   }
 
+  const invalidSelectedStyle =
+    !props.valid &&
+    props.playerState &&
+    { ...style, ...invalidStyle}
+
   return (
-    <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={disabledStyle || invalidStyle || style} onClick={!props.disabled && props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
+    <div
+      className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})}
+      style={disabledSelectedStyle || invalidSelectedStyle || disabledStyle || invalidStyle || style}
+      onClick={!props.disabled && props.onClick}
+      ref={focusRef(props.isSelected)}
+    >
+      {props.value ? props.value : "" }
+    </div>
   )
 }
