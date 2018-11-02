@@ -36,8 +36,11 @@ export default class SudokuBoard extends React.Component {
   }
 
   handleCellChange = (x,y,val) => {
-    const cellValue = parseInt(val, 10)
-    if(cellValue && 1 <= cellValue && cellValue <= 9) {
+    let cellValue = parseInt(val, 10);
+    if (val === "Backspace") {
+      cellValue = 0;
+    }
+    if(!isNaN(cellValue) && 0 <= cellValue && cellValue <= 9) {
       mutate({
         query: `{updateGame(id:$id, col: $col, row: $row, val: $val)}`,
         variables: {
@@ -97,7 +100,6 @@ const BoardCell = (props) => {
   const disabledStyle = props.disabled && {
     background: 'lightgray'
   };
-  console.log(style || disabledStyle);
   return (
     <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={disabledStyle || style} onClick={!props.disabled && props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
   )

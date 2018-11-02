@@ -142,13 +142,13 @@ Sudoku = connectGraphQL(Sudoku, (props) => ({
 function App() {
   const pathname = window.location.pathname;
   const gameId = parseInt(pathname.slice(1),10);
-  console.log(gameId);
   if (pathname === "/graphiql") {
     return <GraphiQLWithFetcher />;
   } else if (!isNaN(gameId)) {
     return <Sudoku id={gameId}/>
   } 
   else {
+    window.location.pathname = "/1";
     return <Sudoku id={1}/>
   }
 }
