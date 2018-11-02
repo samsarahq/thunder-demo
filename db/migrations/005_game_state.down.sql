@@ -1,0 +1,2 @@
+ALTER TABLE games
+MODIFY COLUMN state INT;
