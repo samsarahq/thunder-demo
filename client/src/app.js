@@ -1,5 +1,6 @@
 import React from 'react';
 import { GraphiQLWithFetcher } from './graphiql';
+import { connectGraphQL, mutate } from 'thunder-react';
 import './app.css'
 import SudokuBoard from "./board";
 
@@ -109,7 +110,9 @@ function Chat({ messages }) {
 let Sudoku = function(props) {
   return (
     <div className="app-container">
-      <div className="game-container"></div>
+      <div className="game-container">
+      <div className="BoardWrapper"><SudokuBoard /></div>
+      </div>
       <div className="chat-container">
         <Chat messages={props.data.value.messages} />
         <Editor />
