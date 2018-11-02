@@ -4,16 +4,29 @@ import { connectGraphQL } from 'thunder-react';
 
 const WIDTH = 9;
 const HEIGHT = 9;
-const board = Array.from(Array(WIDTH), _ => Array(HEIGHT).fill(0));
-
+const board =  Array.from(Array(WIDTH), _ => Array(HEIGHT).fill(0))
+ 
 class SudokuBoard extends React.Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props);
     this.state = {
       x: 0,
       y: 0,
     }
   }
+
+  puzzleToArray = (puzzle) => {
+  let rows = puzzle.split("\n");
+  return rows.map((r) => {
+    let cols = r.split("|");
+    return cols.map((c)=> {
+      if (c === ".") {
+        return null;
+      }
+      return parseInt(c, 10);
+    });
+  });
+}
   
   componentWillMount() {
     window.onkeydown = this.handleKeyDown
@@ -41,6 +54,7 @@ class SudokuBoard extends React.Component {
   }
 
   render() {
+    const board = this.puzzleToArray(this.props.data.value.game.data)
     return <div>{board.map(
       (row, i) => <div key={i}>{
         row.map((cell, j) => <BoardCell value={cell} isSelected={Boolean(i === this.state.y && j === this.state.x)} onClick={this.handleClick(j, i)} key={j} />)
@@ -58,9 +72,8 @@ const BoardCell = (props) => {return (
 export default connectGraphQL(SudokuBoard, () => ({
   query: `
   {
-    messages {
-      id, text
-      reactions { reaction count }
+    game(id: 1) {
+      data
     }
   }`,
   variables: {},
