@@ -1,0 +1,4 @@
+ALTER TABLE players
+ADD color TEXT,
+ADD x INT,
+ADD y INT;
