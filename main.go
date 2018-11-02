@@ -24,6 +24,7 @@ type Game struct {
 	Id   int64 `sql:",primary" graphql:",key"`
 	State	int32
 	Data string
+	Name string
 }
 
 type Player struct {
@@ -83,11 +84,23 @@ func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("createGame", func(ctx context.Context, args struct{ Data string }) error {
+	object.FieldFunc("createGame", func(ctx context.Context, args struct{ Name string }) (*Game, error) {
 		grid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
-		_, err := s.db.InsertRow(ctx, &Game{Data: grid.DataString()})
-		return err
+		game := Game{Name: args.Name, Data: grid.DataString()}
+		res, err := s.db.InsertRow(ctx, &game)
+		if err != nil {
+			return nil, err
+		}
+
+		lastInsertId, err := res.LastInsertId()
+		if err != nil {
+			return nil, err
+		}
+
+		game.Id = lastInsertId
+		return &game, nil
 	})
+
 
 	type updateGameArgs struct {
 		Id int64
