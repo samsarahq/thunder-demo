@@ -121,6 +121,7 @@ Sudoku = connectGraphQL(Sudoku, (props) => ({
     game(id: $id) {
       data
       state
+      solved
       name
       playerStates {
         playerId

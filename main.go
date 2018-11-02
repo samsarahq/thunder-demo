@@ -67,10 +67,11 @@ type Server struct {
 }
 
 type Game struct {
-	Id    int64 `sql:",primary" graphql:",key"`
-	State string
-	Data  string
-	Name  string
+	Id     int64 `sql:",primary" graphql:",key"`
+	State  string
+	Data   string
+	Name   string
+	Solved bool
 }
 
 // For a single game.
@@ -184,6 +185,9 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 		if err := s.db.QueryRow(ctx, &game, sqlgen.Filter{"id": args.Id}, nil); err != nil {
 			return err
 		}
+		if game.Solved {
+			return nil
+		}
 		var r, c = int(args.Row), int(args.Col)
 		if origState := sudoku.LoadSDK(game.Data).Cell(r, c).Number(); origState != 0 {
 			return errors.New("Can't change original cell")
@@ -191,6 +195,9 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 
 		grid := sudoku.MutableLoadSDK(game.State)
 		grid.MutableCell(r, c).SetNumber(int(args.Val))
+		if grid.Solved() {
+			game.Solved = true
+		}
 		game.State = grid.DataString()
 
 		err := s.db.UpdateRow(ctx, game)
