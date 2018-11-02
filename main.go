@@ -9,6 +9,9 @@ import (
 	"log"
 	"time"
 	"sync"
+	"encoding/json"
+	"os"
+	"io/ioutil"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
@@ -28,6 +31,12 @@ const (
 type (
 	PlayerColor string
 )
+
+type (
+	PlayerName string
+)
+
+var SuperheroNames []PlayerName
 
 var (
 	// Set of A100 from https://material.io/design/color/#tools-for-picking-colors
@@ -68,6 +77,7 @@ type Game struct {
 type PlayerState struct {
 	PlayerId string
 	Color PlayerColor
+	Name PlayerName
 	X int64
 	Y int64
 }
@@ -243,6 +253,7 @@ func (s *Server) newPlayerState(id string) *PlayerState {
 	return &PlayerState{
 		PlayerId: id,
 		Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+		Name: SuperheroNames[rand.Intn(len(SuperheroNames))],
 	}
 }
 
@@ -304,6 +315,19 @@ func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Hand
 }
 
 func main() {
+	superheroNamesFile, err := os.Open("./superheroes.json")
+	if err != nil {
+		panic(err)
+	}
+
+	superheroNamesByteValue, _ := ioutil.ReadAll(superheroNamesFile)
+
+	err = json.Unmarshal([]byte(superheroNamesByteValue), &SuperheroNames)
+	if err != nil {
+		panic(err)
+	}
+	superheroNamesFile.Close()
+
 	sqlgenSchema := sqlgen.NewSchema()
 	sqlgenSchema.MustRegisterType("games", sqlgen.AutoIncrement, Game{})
 	sqlgenSchema.MustRegisterType("players", sqlgen.AutoIncrement, Player{})
