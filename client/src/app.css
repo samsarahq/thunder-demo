@@ -9,35 +9,6 @@
   flex: 3;
 }
 
-.chat-container {
-  flex: 1;
-  border: 1px solid #888;
-  flex-direction: column;
-}
-
-.message {
-  display: flex;
-  padding: 1rem;
-  border-bottom: 1px solid #ccc;
-}
-
-.message-delete {
-  margin-left: auto;
-}
-
-.editor {
-  align-self: flex-end;
-  display: flex;
-}
-
-.editor-input {
-  flex: 1;
-}
-
-.editor-submit {
-  margin-left: auto;
-}
-
 .App-boardWrapper {
   display: flex;
   flex-direction: column;
@@ -54,4 +25,31 @@
 
 .u-marginBottomLg {
   margin-bottom: 6rem;
+}
+
+.button {
+  border: none;
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0px;
+  -webkit-box-shadow: 0px 0px 5px #dadada;
+  -moz-box-shadow: 0px 0px 5px #dadada;
+  box-shadow: 0px 0px 5px #dadada;
+  color: #555;
+  background: #fafafa;
+  padding: 10px 15px;
+  text-decoration: none;
+  letter-spacing: 0.1rem;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+}
+
+.button:hover {
+  background: #f4f4f4;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
 }
