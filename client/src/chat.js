@@ -97,7 +97,7 @@ export default class Chat extends React.Component {
     return (
       <div className="chat-container" ref={el => this.chatContainerRef = el}>
         <div className="chat-header" ref={el => this.chatHeaderRef = el}>
-          Let's get chatty
+          Hello, {this.props.username}!
         </div>
         <div
           className="messages-container"
