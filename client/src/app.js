@@ -103,7 +103,7 @@ let Sudoku = function(props) {
         <div className="App-gameName">
           {game.name}
         </div>
-        <SudokuBoard id={props.id} board={game.data}/>
+        <SudokuBoard id={props.id} board={game.data} playerStates={game.playerStates} />
         <div className="u-marginBottomLg" />
       </div>
       </div>
@@ -121,6 +121,12 @@ Sudoku = connectGraphQL(Sudoku, (props) => ({
     game(id: $id) {
       data
       name
+      playerStates {
+        playerId
+        color
+        x
+        y
+      }
     }
     messages {
       id, text
