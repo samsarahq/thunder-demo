@@ -7,13 +7,13 @@ import (
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jkomoros/sudoku"
 	"github.com/samsarahq/thunder/graphql"
 	"github.com/samsarahq/thunder/graphql/graphiql"
 	"github.com/samsarahq/thunder/graphql/introspection"
 	"github.com/samsarahq/thunder/graphql/schemabuilder"
 	"github.com/samsarahq/thunder/livesql"
 	"github.com/samsarahq/thunder/sqlgen"
-	"github.com/jkomoros/sudoku"
 )
 
 const (
@@ -51,22 +51,22 @@ type Server struct {
 }
 
 type Game struct {
-	Id   int64 `sql:",primary" graphql:",key"`
-	State	int32
-	Data string
-	Name string
+	Id    int64 `sql:",primary" graphql:",key"`
+	State int32
+	Data  string
+	Name  string
 }
 
 // For a single game.
 type PlayerState struct {
 	PlayerId int64
-	Color PlayerColor
-	X int64
-	Y int64
+	Color    PlayerColor
+	X        int64
+	Y        int64
 }
 
 type Player struct {
-	Id int64 `sql:",primary" graphql:",key"`
+	Id   int64 `sql:",primary" graphql:",key"`
 	Name string
 }
 
@@ -75,7 +75,7 @@ type Message struct {
 	Text string
 }
 
-func checkPuzzle(puzzle string) (bool) {
+func checkPuzzle(puzzle string) bool {
 	grid := sudoku.LoadSDK(puzzle)
 	return grid.Solved()
 }
@@ -85,7 +85,7 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 
 	object.FieldFunc("game", func(ctx context.Context, args struct{ Id int64 }) (*Game, error) {
 		var result *Game
-		if err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil); err !=nil {
+		if err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil); err != nil {
 			return nil, err
 		}
 		return result, nil
@@ -105,27 +105,27 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 		return []*PlayerState{
 			&PlayerState{
 				PlayerId: 1,
-				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X: 3,
-				Y: 2,
+				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X:        3,
+				Y:        2,
 			},
 			&PlayerState{
 				PlayerId: 1,
-				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X: 6,
-				Y: 7,
+				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X:        6,
+				Y:        7,
 			},
 			&PlayerState{
 				PlayerId: 1,
-				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X: 9,
-				Y: 8,
+				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X:        9,
+				Y:        8,
 			},
 			&PlayerState{
 				PlayerId: 1,
-				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X: 1,
-				Y: 8,
+				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X:        1,
+				Y:        8,
 			},
 		}, nil
 	})
@@ -175,9 +175,8 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 		return &game, nil
 	})
 
-
 	type updateGameArgs struct {
-		Id int64
+		Id  int64
 		Row int16
 		Col int16
 		Val int16
@@ -189,7 +188,7 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 		}
 
 		grid := sudoku.MutableLoadSDK(game.Data)
-		grid.MutableCell(int(args.Row),int(args.Col)).SetNumber(int(args.Val))
+		grid.MutableCell(int(args.Row), int(args.Col)).SetNumber(int(args.Val))
 		game.Data = grid.DataString()
 
 		err := s.db.UpdateRow(ctx, game)
