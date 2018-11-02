@@ -54,9 +54,6 @@ export const getValidCells = (board) => {
                     continue;
                 }
 
-                if (cell.row == 5 && cell.col == 6) {
-                    console.log(data[row])
-                }
                 // check if numbers are unique
                 if (col !== 8 && cell.val === next_cell.val){
                     console.log(data[row])

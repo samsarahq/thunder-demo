@@ -3,6 +3,7 @@ import { GraphiQLWithFetcher } from './graphiql';
 import { connectGraphQL } from 'thunder-react';
 import './app.css'
 import SudokuBoard from "./board";
+import NewGame from "./new_game";
 import Chat from './chat'
 
 const Sudoku = function(props) {
@@ -63,6 +64,8 @@ function App() {
   const gameId = parseInt(pathname.slice(1),10);
   if (pathname === "/graphiql") {
     return <GraphiQLWithFetcher />;
+  } else if (pathname === "/new") {
+    return <NewGame/>
   } else if (!isNaN(gameId)) {
     return <ConnectedSudoku id={gameId}/>
   } 
