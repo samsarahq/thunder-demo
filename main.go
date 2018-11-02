@@ -14,6 +14,8 @@ import (
 	"github.com/jkomoros/sudoku"
 )
 
+var ErrNoRows = "sql: no rows in result set"
+
 type Server struct {
 	db *livesql.LiveDB
 }
@@ -22,6 +24,11 @@ type Game struct {
 	Id   int64 `sql:",primary" graphql:",key"`
 	State	int32
 	Data string
+}
+
+type Player struct {
+	Id int64 `sql:",primary" graphql:",key"`
+	Name string
 }
 
 func checkPuzzle(puzzle string) (bool) {
@@ -42,6 +49,30 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 
 	object.FieldFunc("games", func(ctx context.Context) ([]*Game, error) {
 		var result []*Game
+		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
+			return nil, err
+		}
+		return result, nil
+	})
+}
+
+func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
+	object := schema.Query()
+
+	object.FieldFunc("player", func(ctx context.Context, args struct{ Id int64 }) (*Player, error) {
+		var result *Player
+		err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil)
+		if err.Error() == ErrNoRows {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	})
+
+	object.FieldFunc("players", func(ctx context.Context) ([]*Player, error) {
+		var result []*Player
 		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
 			return nil, err
 		}
@@ -79,11 +110,22 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 	})
 }
 
+func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
+	object := schema.Mutation()
+
+	object.FieldFunc("createPlayer", func(ctx context.Context, args struct{ Name string }) error {
+		_, err := s.db.InsertRow(ctx, &Player{Name: args.Name})
+		return err
+	})
+}
+
 func (s *Server) SchemaBuilderSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
 
 	s.registerGameQueries(schema)
 	s.registerGameMutations(schema)
+	s.registerPlayerQueries(schema)
+	s.registerPlayerMutations(schema)
 
 	return schema
 }
@@ -95,6 +137,7 @@ func (s *Server) Schema() *graphql.Schema {
 func main() {
 	sqlgenSchema := sqlgen.NewSchema()
 	sqlgenSchema.MustRegisterType("games", sqlgen.AutoIncrement, Game{})
+	sqlgenSchema.MustRegisterType("players", sqlgen.AutoIncrement, Player{})
 
 	db, err := livesql.Open("localhost", 3307, "root", "", "sudoku", sqlgenSchema)
 	if err != nil {
