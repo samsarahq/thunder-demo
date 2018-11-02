@@ -73,10 +73,13 @@ export default class SudokuBoard extends React.Component {
   }
 
   render() {
-    const board = this.puzzleToArray(this.props.board)
-    return <div>{board.map(
+    const stateBoard = this.puzzleToArray(this.props.stateBoard)
+    const initialBoard = this.puzzleToArray(this.props.initialBoard)
+    return <div>{stateBoard.map(
       (row, i) => <div key={i}>{
-        row.map((cell, j) => <BoardCell value={cell} playerState={this.getPlayerState(j, i)} onClick={this.handleClick(j, i)} key={j} />)
+        row.map((cell, j) => 
+          <BoardCell disabled={initialBoard[i][j]!== null} value={cell} playerState={this.getPlayerState(j, i)} onClick={this.handleClick(j, i)} key={j} />
+        )
       }</div>)
     }</div>
   }
@@ -88,8 +91,13 @@ const BoardCell = (props) => {
   const style = props.playerState && {
     outline: `3px solid ${props.playerState.color}`,
     boxShadow: `0 0 0 3px ${props.playerState.color}`
-  }
+  };
+
+  const disabledStyle = props.disabled && {
+    background: 'lightgray'
+  };
+  console.log(style || disabledStyle);
   return (
-    <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={style} onClick={props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
+    <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={disabledStyle || style} onClick={!props.disabled && props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
   )
 }
