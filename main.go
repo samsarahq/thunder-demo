@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"math/rand"
 	"net/http"
 
@@ -52,7 +53,7 @@ type Server struct {
 
 type Game struct {
 	Id    int64 `sql:",primary" graphql:",key"`
-	State int32
+	State string
 	Data  string
 	Name  string
 }
@@ -160,7 +161,8 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 
 	object.FieldFunc("createGame", func(ctx context.Context, args struct{ Name string }) (*Game, error) {
 		grid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
-		game := Game{Name: args.Name, Data: grid.DataString()}
+		gridString := grid.DataString()
+		game := Game{Name: args.Name, Data: gridString, State: gridString}
 		res, err := s.db.InsertRow(ctx, &game)
 		if err != nil {
 			return nil, err
@@ -186,10 +188,14 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 		if err := s.db.QueryRow(ctx, &game, sqlgen.Filter{"id": args.Id}, nil); err != nil {
 			return err
 		}
+		var r, c = int(args.Row), int(args.Col)
+		if origState := sudoku.LoadSDK(game.Data).Cell(r, c).Number(); origState != 0 {
+			return errors.New("Can't change original cell")
+		}
 
-		grid := sudoku.MutableLoadSDK(game.Data)
-		grid.MutableCell(int(args.Row), int(args.Col)).SetNumber(int(args.Val))
-		game.Data = grid.DataString()
+		grid := sudoku.MutableLoadSDK(game.State)
+		grid.MutableCell(r, c).SetNumber(int(args.Val))
+		game.State = grid.DataString()
 
 		err := s.db.UpdateRow(ctx, game)
 		return err
