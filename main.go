@@ -88,6 +88,8 @@ type Player struct {
 
 type Message struct {
 	Id   int64 `sql:",primary" graphql:",key"`
+	SentBy PlayerName
+	Color PlayerColor
 	Text string
 }
 
@@ -234,8 +236,8 @@ func (s *Server) registerMessageQuery(schema *schemabuilder.Schema) {
 func (s *Server) registerMessageMutation(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("addMessage", func(ctx context.Context, args struct{ Text string }) error {
-		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text})
+	object.FieldFunc("addMessage", func(ctx context.Context, args struct{ Text string; SentBy PlayerName; Color PlayerColor }) error {
+		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text, SentBy: args.SentBy, Color: args.Color})
 		return err
 	})
 

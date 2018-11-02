@@ -6,7 +6,7 @@ import SudokuBoard from "./board";
 import Chat from './chat'
 
 const Sudoku = function(props) {
-  const { game, messages } = props.data.value;
+  const { game, messages, currentPlayer } = props.data.value;
   return (
     <div className="app-container">
       <div className="game-container">
@@ -18,7 +18,7 @@ const Sudoku = function(props) {
           <div className="u-marginBottomLg" />
         </div>
       </div>
-      <Chat messages={messages} />
+      <Chat messages={messages} username={currentPlayer.name} usernameColor={currentPlayer.color}/>
     </div>
   );
 }
@@ -39,7 +39,17 @@ const ConnectedSudoku = connectGraphQL(Sudoku, (props) => ({
       }
     }
     messages {
-      id, text
+      id
+      text
+      sentBy
+      color
+    }
+    currentPlayer {
+      color
+      name
+      playerId
+      x
+      y
     }
   }`,
   variables: {

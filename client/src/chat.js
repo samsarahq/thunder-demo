@@ -10,11 +10,11 @@ function deleteMessage(id) {
   });
 }
 
-function Message({ id, text, username }) {
+function Message({ id, text, username, usernameColor }) {
   return (
     <div className="message">
       <div>
-        <div className="message-username">{username}</div>
+        <div style={{color: usernameColor}} className="message-username">{username}</div>
         <div>{text}</div>
       </div>
       <TrashIcon
@@ -35,8 +35,8 @@ class Editor extends React.Component {
 
   handleSubmit = (e) => {
     mutate({
-      query: '{ addMessage(text: $text) }',
-      variables: { text: this.state.text },
+      query: '{ addMessage(text: $text, sentBy: $sentBy, color: $color) }',
+      variables: { text: this.state.text, sentBy: this.props.username, color: this.props.usernameColor },
     }).then(() => {
       this.setState({text: ''});
     });
@@ -104,9 +104,9 @@ export default class Chat extends React.Component {
           ref={el => this.messagesContainerRef = el}
           style={{ height: this.state.messageContainerHeight }}
         >
-          {this.props.messages.map(props => <Message key={props.id} username="user" {...props} />)}
+          {this.props.messages.map(props => <Message key={props.id} username={props.sentBy} usernameColor={props.color} {...props} />)}
         </div>
-        <Editor setEditorRef={el => this.editorRef = el} />
+        <Editor setEditorRef={el => this.editorRef = el} username={this.props.username} usernameColor={this.props.usernameColor}/>
       </div>
     )
   }
