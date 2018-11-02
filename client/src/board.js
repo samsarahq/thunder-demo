@@ -1,6 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 import { mutate } from 'thunder-react';
+import './board.css'
 
 const WIDTH = 9;
 const HEIGHT = 9;
@@ -75,8 +76,8 @@ export default class SudokuBoard extends React.Component {
   render() {
     const stateBoard = this.puzzleToArray(this.props.stateBoard)
     const initialBoard = this.puzzleToArray(this.props.initialBoard)
-    return <div>{stateBoard.map(
-      (row, i) => <div key={i}>{
+    return <div className="board">{stateBoard.map(
+      (row, i) => <div className="row" key={i}>{
         row.map((cell, j) => 
           <BoardCell disabled={initialBoard[i][j]!== null} value={cell} playerState={this.getPlayerState(j, i)} onClick={this.handleClick(j, i)} key={j} />
         )
