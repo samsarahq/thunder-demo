@@ -1,3 +1,5 @@
+/** TODO after the hackathon: let's convert this to SUIT CSS please. */
+
 .app-container {
   display: flex;
   height: 100vh;
@@ -34,4 +36,22 @@
 
 .editor-submit {
   margin-left: auto;
+}
+
+.App-boardWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.App-gameName {
+  margin-bottom: 3rem;
+  font-size: 3rem;
+  font-weight: 500;
+}
+
+.u-marginBottomLg {
+  margin-bottom: 6rem;
 }

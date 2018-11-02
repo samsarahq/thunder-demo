@@ -95,13 +95,20 @@ function Chat({ messages }) {
 }
 
 let Sudoku = function(props) {
+  const { game, messages } = props.data.value;
   return (
     <div className="app-container">
       <div className="game-container">
-      <div className="BoardWrapper"><SudokuBoard id={props.id} board={props.data.value.game.data}/></div>
+      <div className="App-boardWrapper">
+        <div className="App-gameName">
+          {game.name}
+        </div>
+        <SudokuBoard id={props.id} board={game.data}/>
+        <div className="u-marginBottomLg" />
+      </div>
       </div>
       <div className="chat-container">
-        <Chat messages={props.data.value.messages} />
+        <Chat messages={messages} />
         <Editor />
       </div>
     </div>
@@ -113,6 +120,7 @@ Sudoku = connectGraphQL(Sudoku, (props) => ({
   {
     game(id: $id) {
       data
+      name
     }
     messages {
       id, text

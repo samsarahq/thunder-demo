@@ -9,13 +9,6 @@ html, body, #root {
   height: 100%;
 }
 
-.BoardWrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
 .BoardCell {
   width: 4rem;
   height: 4rem;
