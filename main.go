@@ -24,6 +24,7 @@ type Game struct {
 	Id   int64 `sql:",primary" graphql:",key"`
 	State	int32
 	Data string
+	Name string
 }
 
 type Player struct {

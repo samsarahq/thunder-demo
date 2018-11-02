@@ -1,0 +1,2 @@
+ALTER TABLE games
+ADD COLUMN name TEXT;
