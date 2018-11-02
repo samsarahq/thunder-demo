@@ -123,7 +123,6 @@ Sudoku = connectGraphQL(Sudoku, () => ({
   {
     messages {
       id, text
-      reactions { reaction count }
     }
   }`,
   variables: {},
