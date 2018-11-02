@@ -1,6 +1,7 @@
 import React from 'react';
 import { connectGraphQL, mutate } from 'thunder-react';
 import { GraphiQLWithFetcher } from './graphiql';
+import './app.css'
 
 window.puzzleToArray = (puzzle) => {
   let rows = puzzle.split("\n");
@@ -31,32 +32,50 @@ window.arrayToPuzzle = (arr) => {
 }
 
 let testPuzzle = "6|.|.|.|.|3|.|.|9\n.|.|4|.|1|.|6|.|7\n1|.|.|.|.|.|.|.|.\n.|.|.|4|.|9|.|5|.\n.|2|.|.|.|.|.|7|.\n9|.|7|.|.|.|8|.|4\n.|9|.|.|8|.|.|.|.\n.|8|.|3|.|2|.|9|.\n.|.|.|.|.|.|5|2|.";
-console.log(testPuzzle == window.arrayToPuzzle(window.puzzleToArray(testPuzzle)));
+console.log(testPuzzle === window.arrayToPuzzle(window.puzzleToArray(testPuzzle)));
 
+class Editor extends React.Component {
+  state = { text: '' }
 
-const Editor = React.createClass({
-  getInitialState() {
-    return {text: ''};
-  },
+  handleInputChange = (e) => {
+    this.setState({text: e.target.value})
+  }
 
-  onSubmit(e) {
+  handleSubmit = (e) => {
     mutate({
       query: '{ addMessage(text: $text) }',
       variables: { text: this.state.text },
     }).then(() => {
       this.setState({text: ''});
     });
-  },
+  }
+
+  handleEnterKey = (e) => {
+    if (e.which === 13) {
+      this.handleSubmit(e)
+    }
+  }
 
   render() {
     return (
-      <div>
-        <input type="text" value={this.state.text} onChange={e => this.setState({text: e.target.value})} />
-        <button onClick={this.onSubmit}>Submit</button>
+      <div className="editor">
+        <input
+          className="editor-input"
+          type="text"
+          value={this.state.text}
+          onChange={this.handleInputChange}
+          onKeyUp={this.handleEnterKey}
+        />
+        <button
+          className="editor-submit"
+          onClick={this.handleSubmit}
+        >
+          Submit
+        </button>
       </div>
     );
-  },
-});
+  }
+}
 
 function deleteMessage(id) {
   mutate({
@@ -65,29 +84,41 @@ function deleteMessage(id) {
   });
 }
 
-function addReaction(messageId, reaction) {
-  mutate({
-    query: '{ addReaction(messageId: $messageId, reaction: $reaction) }',
-    variables: { messageId, reaction },
-  });
+function Message({ id, text, username }) {
+  return (
+    <div className="message">
+      <div>
+        <div>{username}</div>
+        <div>{text}</div>
+      </div>
+      <button className="message-delete" onClick={() => deleteMessage(id)}>
+        X
+      </button>
+    </div>
+  )
 }
 
-let Messages = function(props) {
+function Chat({ messages }) {
   return (
     <div>
-      {props.data.value.messages.map(({id, text, reactions}) =>
-        <p key={id}>{text}
-          <button onClick={() => deleteMessage(id)}>X</button>
-          {reactions.map(({reaction, count}) =>
-            <button onClick={() => addReaction(id, reaction)}>{reaction} x{count}</button>
-          )}
-        </p>
-      )}
-      <Editor />
+      {messages.map(props => <Message key={props.id} username="user" {...props} />)}
+    </div>
+  )
+}
+
+let Sudoku = function(props) {
+  return (
+    <div className="app-container">
+      <div className="game-container"></div>
+      <div className="chat-container">
+        <Chat messages={props.data.value.messages} />
+        <Editor />
+      </div>
     </div>
   );
 }
-Messages = connectGraphQL(Messages, () => ({
+
+Sudoku = connectGraphQL(Sudoku, () => ({
   query: `
   {
     messages {
@@ -103,7 +134,7 @@ function App() {
   if (window.location.pathname === "/graphiql") {
     return <GraphiQLWithFetcher />;
   } else {
-    return <Messages />;
+    return <Sudoku />;
   }
 }
 
