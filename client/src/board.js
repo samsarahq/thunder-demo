@@ -76,6 +76,6 @@ export default class SudokuBoard extends React.Component {
 
 const focusRef = isSelected => ref => isSelected && ref && console.log("isSelected", isSelected, ref, ref.focus()) && ref.focus();
 
-const BoardCell = (props) => {return (
+const BoardCell = (props) => (
   <div className={classNames("BoardCell", {"is-selected": props.isSelected})} onClick={props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
-)}
+)
