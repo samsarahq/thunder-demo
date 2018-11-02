@@ -1,6 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 import { mutate } from 'thunder-react';
+import {getValidCells} from './sudoku';
 import './board.css'
 
 const WIDTH = 9;
@@ -8,7 +9,7 @@ const HEIGHT = 9;
 const CurrentPlayerState = {
   color: "#448AFF",
 };
- 
+
 export default class SudokuBoard extends React.Component {
   constructor(props) {
     super(props);
@@ -79,10 +80,11 @@ export default class SudokuBoard extends React.Component {
   render() {
     const stateBoard = this.puzzleToArray(this.props.stateBoard)
     const initialBoard = this.puzzleToArray(this.props.initialBoard)
+    const validBoard = getValidCells(stateBoard);
     return <div className="board">{stateBoard.map(
       (row, i) => <div className="row" key={i}>{
         row.map((cell, j) => 
-          <BoardCell disabled={initialBoard[i][j]!== null} value={cell} playerState={this.getPlayerState(j, i)} onClick={this.handleClick(j, i)} key={j} />
+          <BoardCell disabled={initialBoard[i][j]!== null} valid={validBoard[i][j]}value={cell} playerState={this.getPlayerState(j, i)} onClick={this.handleClick(j, i)} key={j} />
         )
       }</div>)
     }</div>
@@ -98,9 +100,14 @@ const BoardCell = (props) => {
   };
 
   const disabledStyle = props.disabled && {
-    background: 'lightgray'
+    background: '#bdc3c7'
   };
+
+  const invalidStyle = !props.valid && {
+    background: '#e74c3c'
+  }
+
   return (
-    <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={disabledStyle || style} onClick={!props.disabled && props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
+    <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={disabledStyle || invalidStyle || style} onClick={!props.disabled && props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
   )
 }
