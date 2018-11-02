@@ -17,6 +17,7 @@ html, body, #root {
   font-size: 2.4rem;
   display: table-cell;
   vertical-align: middle;
+  cursor: pointer;
 }
 
 .BoardCell:hover {
@@ -27,7 +28,5 @@ html, body, #root {
   position: relative;
   z-index: 1;
   outline-offset: -3px;
-  outline: 3px solid #3f99ff;
   border-radius: 4px;
-  box-shadow: 0 0 0 3px #3f99ff;
 }

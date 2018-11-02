@@ -1,10 +1,12 @@
 import React from 'react';
 import classNames from 'classnames';
-import { connectGraphQL, mutate } from 'thunder-react';
+import { mutate } from 'thunder-react';
 
 const WIDTH = 9;
 const HEIGHT = 9;
-const board =  Array.from(Array(WIDTH), _ => Array(HEIGHT).fill(0))
+const CurrentPlayerState = {
+  color: "#448AFF",
+};
  
 export default class SudokuBoard extends React.Component {
   constructor(props) {
@@ -56,7 +58,6 @@ export default class SudokuBoard extends React.Component {
       default:
         this.handleCellChange(x, y,event.key);
     }
-    console.log(board, board[0][1])
     this.setState({x, y})
   }
 
@@ -64,18 +65,31 @@ export default class SudokuBoard extends React.Component {
     this.setState({x, y})
   }
 
+  getPlayerState = (x, y) => {
+    if(x === this.state.x && y === this.state.y) {
+      return CurrentPlayerState
+    }
+    return this.props.playerStates.find(p => p.x === x && p.y === y)
+  }
+
   render() {
     const board = this.puzzleToArray(this.props.board)
     return <div>{board.map(
       (row, i) => <div key={i}>{
-        row.map((cell, j) => <BoardCell value={cell} isSelected={Boolean(i === this.state.y && j === this.state.x)} onClick={this.handleClick(j, i)} key={j} />)
+        row.map((cell, j) => <BoardCell value={cell} playerState={this.getPlayerState(j, i)} onClick={this.handleClick(j, i)} key={j} />)
       }</div>)
     }</div>
   }
 }
 
-const focusRef = isSelected => ref => isSelected && ref && console.log("isSelected", isSelected, ref, ref.focus()) && ref.focus();
+const focusRef = isSelected => ref => isSelected && ref && ref.focus();
 
-const BoardCell = (props) => (
-  <div className={classNames("BoardCell", {"is-selected": props.isSelected})} onClick={props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
-)
+const BoardCell = (props) => {
+  const style = props.playerState && {
+    outline: `3px solid ${props.playerState.color}`,
+    boxShadow: `0 0 0 3px ${props.playerState.color}`
+  }
+  return (
+    <div className={classNames("BoardCell", {"is-selected": Boolean(props.playerState)})} style={style} onClick={props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
+  )
+}
