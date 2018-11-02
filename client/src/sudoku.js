@@ -47,7 +47,7 @@ export const getValidCells = (board) => {
     // validate rows 
     const _validate = function(data){
         for (let row = 0; row < 9; row++) {
-            data[row].sort((a, b) => a.val && b.val ? a.val - b.val : 0);
+            data[row].sort((a, b) => (a.val && b.val) ? a.val - b.val : (!a.val) ? 1 : -1);
             for (let col = 0; col < 9; col++) {
                 let cell = data[row][col], next_cell = data[row][col + 1];
                 
@@ -55,8 +55,12 @@ export const getValidCells = (board) => {
                     continue;
                 }
 
+                if (cell.row == 5 && cell.col == 6) {
+                    console.log(data[row])
+                }
                 // check if numbers are unique
                 if (col !== 8 && cell.val === next_cell.val){
+                    console.log(data[row])
                     validCells[cell.row][cell.col] = false;
                     validCells[next_cell.row][next_cell.col] = false;
                 }
