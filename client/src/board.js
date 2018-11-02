@@ -1,6 +1,6 @@
 import React from 'react';
 import classNames from 'classnames';
-import { connectGraphQL } from 'thunder-react';
+import { connectGraphQL, mutate } from 'thunder-react';
 
 const WIDTH = 9;
 const HEIGHT = 9;
@@ -32,6 +32,20 @@ class SudokuBoard extends React.Component {
     window.onkeydown = this.handleKeyDown
   }
 
+  handleCellChange = (x,y,val) => {
+    const cellValue = parseInt(val, 10)
+    if(cellValue && 1 <= cellValue && cellValue <= 9) {
+      mutate({
+        query: `{updateGame(id:$id, col: $col, row: $row, val: $val)}`,
+        variables: {
+          id: 1,
+          col: x,
+        row: y,
+      val: cellValue}
+      })
+    }
+  }
+
   handleKeyDown = (event) => {
     let {x, y} = this.state
     switch(event.key) {
@@ -40,10 +54,7 @@ class SudokuBoard extends React.Component {
       case "ArrowLeft": x = Math.max(x - 1, 0); break;
       case "ArrowRight": x = Math.min(x + 1, WIDTH - 1); break;
       default:
-        const cellValue = parseInt(event.key, 10)
-        if(cellValue && 1 <= cellValue && cellValue <= 9) {
-          board[y][x] = cellValue
-        }
+        this.handleCellChange(x, y,event.key);
     }
     console.log(board, board[0][1])
     this.setState({x, y})
