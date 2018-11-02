@@ -6,8 +6,12 @@ import (
 	"errors"
 	"math/rand"
 	"net/http"
+	"log"
+	"time"
+	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/websocket"
 	"github.com/jkomoros/sudoku"
 	"github.com/samsarahq/thunder/graphql"
 	"github.com/samsarahq/thunder/graphql/graphiql"
@@ -49,6 +53,8 @@ var (
 
 type Server struct {
 	db *livesql.LiveDB
+	playerStateMap map[string]*PlayerState
+	playerStateMu sync.Mutex
 }
 
 type Game struct {
@@ -60,10 +66,10 @@ type Game struct {
 
 // For a single game.
 type PlayerState struct {
-	PlayerId int64
-	Color    PlayerColor
-	X        int64
-	Y        int64
+	PlayerId string
+	Color PlayerColor
+	X int64
+	Y int64
 }
 
 type Player struct {
@@ -102,33 +108,13 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 
 	// Game Field Funcs
 	object = schema.Object("Game", Game{})
-	object.FieldFunc("playerStates", func(ctx context.Context, g *Game) ([]*PlayerState, error) {
-		return []*PlayerState{
-			&PlayerState{
-				PlayerId: 1,
-				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X:        3,
-				Y:        2,
-			},
-			&PlayerState{
-				PlayerId: 1,
-				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X:        6,
-				Y:        7,
-			},
-			&PlayerState{
-				PlayerId: 1,
-				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X:        9,
-				Y:        8,
-			},
-			&PlayerState{
-				PlayerId: 1,
-				Color:    AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
-				X:        1,
-				Y:        8,
-			},
-		}, nil
+	// TODO: track mutations to player focus in backend
+	object.FieldFunc("playerStates", func(ctx context.Context, g *Game) []*PlayerState {
+		playerStates := []*PlayerState{}
+		for _, player := range s.playerStateMap {
+			playerStates = append(playerStates, player)
+		}
+		return playerStates
 	})
 }
 
@@ -253,6 +239,70 @@ func (s *Server) Schema() *graphql.Schema {
 	return s.SchemaBuilderSchema().MustBuild()
 }
 
+func (s *Server) newPlayerState(id string) *PlayerState {
+	return &PlayerState{
+		PlayerId: id,
+		Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+	}
+}
+
+func (s *Server) AddPlayerToStateMap(id string) {
+	s.playerStateMu.Lock()
+	defer s.playerStateMu.Unlock()
+
+	s.playerStateMap[id] = s.newPlayerState(id)
+}
+
+func (s *Server) RemovePlayerFromStateMap(id string) {
+	s.playerStateMu.Lock()
+	defer s.playerStateMu.Unlock()
+
+	delete(s.playerStateMap, id)
+}
+
+type executionLogger struct {}
+func (s *executionLogger) StartExecution(ctx context.Context, tags map[string]string, initial bool) {}
+func (s *executionLogger) FinishExecution(ctx context.Context, tags map[string]string, delay time.Duration) {}
+func (s *executionLogger) Error(ctx context.Context, err error, tags map[string]string) {
+	log.Printf("error:%v\n%s", tags, err)
+}
+
+type subscriptionLogger struct{
+	server *Server
+}
+
+func (l *subscriptionLogger) Subscribe(ctx context.Context, id string, tags map[string]string) {
+	log.Println("~~ Subscribe", id, tags)
+	l.server.AddPlayerToStateMap(id)
+}
+
+func (l *subscriptionLogger) Unsubscribe(ctx context.Context, id string) {
+	log.Println("~~ Unsubscribe", id)
+	l.server.RemovePlayerFromStateMap(id)
+}
+
+func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Handler {
+	upgrader := &websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		socket, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Printf("upgrader.Upgrade: %v", err)
+			return
+		}
+		defer socket.Close()
+
+		conn := graphql.CreateConnection(r.Context(), socket, schema, graphql.WithExecutionLogger(&executionLogger{}), graphql.WithSubscriptionLogger(&subscriptionLogger{server: server}))
+		conn.ServeJSONSocket()
+	})
+}
+
 func main() {
 	sqlgenSchema := sqlgen.NewSchema()
 	sqlgenSchema.MustRegisterType("games", sqlgen.AutoIncrement, Game{})
@@ -264,11 +314,16 @@ func main() {
 		panic(err)
 	}
 
-	server := &Server{db: db}
+	log.Println("== STARTED ==")
+
+	server := &Server{
+		db: db,
+		playerStateMap: make(map[string]*PlayerState),
+	}
 	graphqlSchema := server.Schema()
 	introspection.AddIntrospectionToSchema(graphqlSchema)
 
-	http.Handle("/graphql", graphql.Handler(graphqlSchema))
+	http.Handle("/graphql", handlerWithPlayerTracking(graphqlSchema, server))
 	http.Handle("/graphiql/", http.StripPrefix("/graphiql/", graphiql.Handler()))
 	if err := http.ListenAndServe(":3030", nil); err != nil {
 		panic(err)
