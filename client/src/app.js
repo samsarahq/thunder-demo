@@ -1,7 +1,7 @@
 import React from 'react';
-import { connectGraphQL, mutate } from 'thunder-react';
 import { GraphiQLWithFetcher } from './graphiql';
 import './app.css'
+import SudokuBoard from "./board";
 
 window.puzzleToArray = (puzzle) => {
   let rows = puzzle.split("\n");
