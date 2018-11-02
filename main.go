@@ -9,7 +9,6 @@ import (
 	"log"
 	"time"
 	"strconv"
-	"sync"
 	"encoding/json"
 	"os"
 	"io/ioutil"
@@ -60,8 +59,6 @@ var (
 
 type Server struct {
 	db *livesql.LiveDB
-	playerStateMap map[int64]*PlayerState
-	playerStateMu sync.Mutex
 }
 
 type Game struct {
@@ -72,18 +69,13 @@ type Game struct {
 	Solved bool
 }
 
-// For a single game.
-type PlayerState struct {
-	PlayerId int64
-	Color PlayerColor
-	Name PlayerName
-	X int64
-	Y int64
-}
-
+// Merged player + state for primary game.
 type Player struct {
 	Id   int64 `sql:",primary" graphql:",key"`
-	Name string
+	Name PlayerName
+	Color PlayerColor
+	X int64
+	Y int64
 }
 
 type Message struct {
@@ -120,24 +112,38 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 	// Game Field Funcs
 	object = schema.Object("Game", Game{})
 	// TODO: track mutations to player focus in backend
-	object.FieldFunc("playerStates", func(ctx context.Context, g *Game) []*PlayerState {
-		playerStates := []*PlayerState{}
-		for _, player := range s.playerStateMap {
-			playerStates = append(playerStates, player)
+	object.FieldFunc("players", func(ctx context.Context, g *Game) ([]*Player, error) {
+		var result []*Player
+		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
+			return nil, err
 		}
-		return playerStates
+		return result, nil
 	})
 }
+
+// func (s *Server) resetPlayers(schema *schemabuilder.Schema) {
+// 	var result *Player
+// 	err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil)
+// 	if err == sql.ErrNoRows {
+// 		return nil, nil
+// 	}
+// }
 
 func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
-	object.FieldFunc("currentPlayer", func(ctx context.Context) *PlayerState {
-		playerId := PlayerId(ctx)
-		if playerId == nil {
-			return nil
+	object.FieldFunc("currentPlayer", func(ctx context.Context) (*Player, error) {
+		id := PlayerId(ctx)
+		log.Println("currentPlayer", id)
+		if id == nil {
+			return nil, nil
 		}
-		return s.playerStateMap[*playerId]
+		var result *Player
+		err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": id}, nil)
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return result, err
 	})
 	object.FieldFunc("player", func(ctx context.Context, args struct{ Id int64 }) (*Player, error) {
 		var result *Player
@@ -145,10 +151,7 @@ func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+		return result, err
 	})
 
 	object.FieldFunc("players", func(ctx context.Context) ([]*Player, error) {
@@ -215,9 +218,24 @@ func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("createPlayer", func(ctx context.Context, args struct{ Name string }) error {
+	object.FieldFunc("createPlayer", func(ctx context.Context, args struct{ Name PlayerName }) error {
 		_, err := s.db.InsertRow(ctx, &Player{Name: args.Name})
 		return err
+	})
+
+	type updatePlayerSelectionArgs struct {
+		PlayerId int64
+		X int64
+		Y int64
+	}
+	object.FieldFunc("updatePlayerSelection", func(ctx context.Context, args updatePlayerSelectionArgs) error {
+		player := &Player{}
+		if err := s.db.QueryRow(ctx, &player, sqlgen.Filter{"id": args.PlayerId}, nil); err != nil {
+			return err
+		}
+		player.X = args.X
+		player.Y = args.Y
+		return s.db.UpdateRow(ctx, player)
 	})
 }
 
@@ -277,26 +295,11 @@ func (s *Server) Schema() *graphql.Schema {
 	return s.SchemaBuilderSchema().MustBuild()
 }
 
-func (s *Server) newPlayerState(id int64) *PlayerState {
-	return &PlayerState{
-		PlayerId: id,
-		Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+func NewPlayer() *Player {
+	return &Player{
 		Name: SuperheroNames[rand.Intn(len(SuperheroNames))],
+		Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
 	}
-}
-
-func (s *Server) AddPlayerToStateMap(id int64) {
-	s.playerStateMu.Lock()
-	defer s.playerStateMu.Unlock()
-
-	s.playerStateMap[id] = s.newPlayerState(id)
-}
-
-func (s *Server) RemovePlayerFromStateMap(id int64) {
-	s.playerStateMu.Lock()
-	defer s.playerStateMu.Unlock()
-
-	delete(s.playerStateMap, id)
 }
 
 type executionLogger struct {}
@@ -310,14 +313,18 @@ type subscriptionLogger struct{
 	server *Server
 }
 
+func PanicIfErr(err error) {
+	if err == nil {
+		return
+	}
+	panic(err.Error())
+}
+
 func (l *subscriptionLogger) Subscribe(ctx context.Context, id string, tags map[string]string) {
 	intId, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		panic("error parsing subscription id")
-	}
+	PanicIfErr(err)
 
-	log.Println("~~ Subscribe", intId, tags)
-	l.server.AddPlayerToStateMap(intId)
+	log.Println("~~ Subscribe", intId)
 }
 
 func (l *subscriptionLogger) Unsubscribe(ctx context.Context, id string) {
@@ -326,7 +333,6 @@ func (l *subscriptionLogger) Unsubscribe(ctx context.Context, id string) {
 		panic("error parsing subscription id")
 	}
 	log.Println("~~ Unsubscribe", intId)
-	l.server.RemovePlayerFromStateMap(intId)
 }
 
 func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Handler {
@@ -346,17 +352,21 @@ func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Hand
 		}
 		defer socket.Close()
 
-		conn := graphql.CreateConnection(r.Context(), socket, schema, graphql.WithExecutionLogger(&executionLogger{}), graphql.WithSubscriptionLogger(&subscriptionLogger{server: server}))
-		storePlayerIdMiddleware := func(input *graphql.ComputationInput, next graphql.MiddlewareNextFunc) *graphql.ComputationOutput {
-			intId, err := strconv.ParseInt(input.Id, 10, 64)
-			if err != nil {
-				panic("error parsing subscription id")
-			}
-			input.Ctx = WithPlayerId(input.Ctx, intId)
-			return next(input)
-		}
-		conn.Use(storePlayerIdMiddleware)
+		ctx := r.Context()
+		response, err := server.db.InsertRow(ctx, NewPlayer())
+		PanicIfErr(err)
+
+		playerId, err := response.LastInsertId()
+		PanicIfErr(err)
+		ctx = WithPlayerId(ctx, playerId)
+		log.Println("~~ created playerId", playerId)
+
+		conn := graphql.CreateConnection(ctx, socket, schema, graphql.WithExecutionLogger(&executionLogger{}), graphql.WithSubscriptionLogger(&subscriptionLogger{server: server}))
 		conn.ServeJSONSocket()
+
+		err = server.db.DeleteRow(ctx, &Player{ Id: playerId })
+		PanicIfErr(err)
+		log.Println("~~ deleted playerId", playerId)
 	})
 }
 
@@ -386,7 +396,6 @@ func main() {
 
 	server := &Server{
 		db: db,
-		playerStateMap: make(map[int64]*PlayerState),
 	}
 	graphqlSchema := server.Schema()
 	introspection.AddIntrospectionToSchema(graphqlSchema)
