@@ -15,7 +15,7 @@ const Sudoku = function(props) {
           <div className="App-gameName">
             {game.name}
           </div>
-          <SudokuBoard id={props.id} initialBoard={game.data} stateBoard={game.state} playerStates={game.playerStates} />
+          <SudokuBoard id={props.id} initialBoard={game.data} stateBoard={game.state} playerStates={game.playerStates} currentPlayer={currentPlayer}/>
           <div className="u-marginBottomLg" />
         </div>
       </div>

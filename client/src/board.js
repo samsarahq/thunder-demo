@@ -6,9 +6,6 @@ import './board.css'
 
 const WIDTH = 9;
 const HEIGHT = 9;
-const CurrentPlayerState = {
-  color: "#448AFF",
-};
 
 export default class SudokuBoard extends React.Component {
   constructor(props) {
@@ -16,6 +13,9 @@ export default class SudokuBoard extends React.Component {
     this.state = {
       x: 0,
       y: 0,
+    }
+    this.currentPlayerState = {
+      color: this.props.currentPlayer.color
     }
   }
   
@@ -59,7 +59,7 @@ export default class SudokuBoard extends React.Component {
 
   getPlayerState = (x, y) => {
     if(x === this.state.x && y === this.state.y) {
-      return CurrentPlayerState
+      return this.currentPlayerState
     }
     return this.props.playerStates.find(p => p.x === x && p.y === y)
   }
