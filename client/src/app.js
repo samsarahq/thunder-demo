@@ -98,7 +98,7 @@ let Sudoku = function(props) {
   return (
     <div className="app-container">
       <div className="game-container">
-      <div className="BoardWrapper"><SudokuBoard /></div>
+      <div className="BoardWrapper"><SudokuBoard id={props.id} board={props.data.value.game.data}/></div>
       </div>
       <div className="chat-container">
         <Chat messages={props.data.value.messages} />
@@ -108,22 +108,33 @@ let Sudoku = function(props) {
   );
 }
 
-Sudoku = connectGraphQL(Sudoku, () => ({
+Sudoku = connectGraphQL(Sudoku, (props) => ({
   query: `
   {
+    game(id: $id) {
+      data
+    }
     messages {
       id, text
     }
   }`,
-  variables: {},
+  variables: {
+    id: props.id
+  },
   onlyValidData: true,
 }));
 
 function App() {
-  if (window.location.pathname === "/graphiql") {
+  const pathname = window.location.pathname;
+  const gameId = parseInt(pathname.slice(1),10);
+  console.log(gameId);
+  if (pathname === "/graphiql") {
     return <GraphiQLWithFetcher />;
-  } else {
-    return <Sudoku />;
+  } else if (!isNaN(gameId)) {
+    return <Sudoku id={gameId}/>
+  } 
+  else {
+    return <Sudoku id={1}/>
   }
 }
 

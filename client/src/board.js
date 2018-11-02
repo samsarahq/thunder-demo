@@ -6,7 +6,7 @@ const WIDTH = 9;
 const HEIGHT = 9;
 const board =  Array.from(Array(WIDTH), _ => Array(HEIGHT).fill(0))
  
-class SudokuBoard extends React.Component {
+export default class SudokuBoard extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -38,7 +38,7 @@ class SudokuBoard extends React.Component {
       mutate({
         query: `{updateGame(id:$id, col: $col, row: $row, val: $val)}`,
         variables: {
-          id: 1,
+          id: this.props.id,
           col: x,
         row: y,
       val: cellValue}
@@ -65,7 +65,7 @@ class SudokuBoard extends React.Component {
   }
 
   render() {
-    const board = this.puzzleToArray(this.props.data.value.game.data)
+    const board = this.puzzleToArray(this.props.board)
     return <div>{board.map(
       (row, i) => <div key={i}>{
         row.map((cell, j) => <BoardCell value={cell} isSelected={Boolean(i === this.state.y && j === this.state.x)} onClick={this.handleClick(j, i)} key={j} />)
@@ -79,14 +79,3 @@ const focusRef = isSelected => ref => isSelected && ref && console.log("isSelect
 const BoardCell = (props) => {return (
   <div className={classNames("BoardCell", {"is-selected": props.isSelected})} onClick={props.onClick} ref={focusRef(props.isSelected)}>{props.value ? props.value : "" }</div>
 )}
-
-export default connectGraphQL(SudokuBoard, () => ({
-  query: `
-  {
-    game(id: 1) {
-      data
-    }
-  }`,
-  variables: {},
-  onlyValidData: true,
-}));
