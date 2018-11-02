@@ -31,5 +31,10 @@ html, body, #root {
 }
 
 .BoardCell.is-selected {
-  border: 1px solid #3f99ff;
+  position: relative;
+  z-index: 1;
+  outline-offset: -3px;
+  outline: 3px solid #3f99ff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px #3f99ff;
 }
