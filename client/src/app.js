@@ -15,7 +15,7 @@ const Sudoku = function(props) {
           <div className="App-gameName">
             {game.name}
           </div>
-          <SudokuBoard id={props.id} initialBoard={game.data} stateBoard={game.state} playerStates={game.playerStates} currentPlayer={currentPlayer}/>
+          <SudokuBoard id={props.id} currentPlayer={currentPlayer} initialBoard={game.data} stateBoard={game.state} playerStates={game.players} />
           <div className="u-marginBottomLg" />
         </div>
       </div>
@@ -27,13 +27,21 @@ const Sudoku = function(props) {
 const ConnectedSudoku = connectGraphQL(Sudoku, (props) => ({
   query: `
   {
+    currentPlayer {
+      id
+      name
+      color
+      x
+      y
+    }
     game(id: $id) {
       data
       state
       solved
       name
-      playerStates {
-        playerId
+      players {
+        id
+        name
         color
         x
         y
@@ -44,13 +52,6 @@ const ConnectedSudoku = connectGraphQL(Sudoku, (props) => ({
       text
       sentBy
       color
-    }
-    currentPlayer {
-      color
-      name
-      playerId
-      x
-      y
     }
   }`,
   variables: {

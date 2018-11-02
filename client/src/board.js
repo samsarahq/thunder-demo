@@ -50,6 +50,15 @@ export default class SudokuBoard extends React.Component {
       default:
         this.handleCellChange(x, y,event.key);
     }
+    console.log("UPDATE STATE", this.props.currentPlayer.id, x, y)
+    mutate({
+      query: `{ updatePlayerSelection(playerId: $id, x: $x, y: $y) }`,
+      variables: {
+        id: this.props.currentPlayer.id,
+        x: x,
+        y: y,
+      }
+    })
     this.setState({x, y})
   }
 
