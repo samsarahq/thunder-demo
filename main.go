@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"math/rand"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -19,6 +20,32 @@ const (
 	DbName = "sudoku"
 )
 
+type (
+	PlayerColor string
+)
+
+var (
+	// Set of A100 from https://material.io/design/color/#tools-for-picking-colors
+	AssignablePlayerColors = []PlayerColor{
+		"#FF5252",
+		"#FF4081",
+		"#E040FB",
+		"#7C4DFF",
+		"#536DFE",
+		// "#448AFF", // main player color
+		"#40C4FF",
+		"#18FFFF",
+		"#64FFDA",
+		"#69F0AE",
+		"#B2FF59",
+		"#EEFF41",
+		"#FFFF00",
+		"#FFD740",
+		"#FFAB40",
+		"#FF6E40",
+	}
+)
+
 type Server struct {
 	db *livesql.LiveDB
 }
@@ -28,6 +55,14 @@ type Game struct {
 	State	int32
 	Data string
 	Name string
+}
+
+// For a single game.
+type PlayerState struct {
+	PlayerId int64
+	Color PlayerColor
+	X int64
+	Y int64
 }
 
 type Player struct {
@@ -62,6 +97,37 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 			return nil, err
 		}
 		return result, nil
+	})
+
+	// Game Field Funcs
+	object = schema.Object("Game", Game{})
+	object.FieldFunc("playerStates", func(ctx context.Context, g *Game) ([]*PlayerState, error) {
+		return []*PlayerState{
+			&PlayerState{
+				PlayerId: 1,
+				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X: 3,
+				Y: 2,
+			},
+			&PlayerState{
+				PlayerId: 1,
+				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X: 6,
+				Y: 7,
+			},
+			&PlayerState{
+				PlayerId: 1,
+				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X: 9,
+				Y: 8,
+			},
+			&PlayerState{
+				PlayerId: 1,
+				Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
+				X: 1,
+				Y: 8,
+			},
+		}, nil
 	})
 }
 
