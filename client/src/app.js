@@ -39,7 +39,16 @@ const ConnectedSudoku = connectGraphQL(Sudoku, (props) => ({
       }
     }
     messages {
-      id, text
+      id
+      text
+      sentBy
+    }
+    currentPlayer {
+      color
+      name
+      playerId
+      x
+      y
     }
   }`,
   variables: {
