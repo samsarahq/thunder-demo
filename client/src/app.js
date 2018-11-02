@@ -20,7 +20,7 @@ window.arrayToPuzzle = (arr) => {
   let output = "";
   arr.forEach((r, i) => {
     r.forEach((c, j) => {
-      output += (c == null) ? "." : '' + c;
+      output += (c === null) ? "." : '' + c;
       if (j < r.length - 1)
         output += '|';
     });

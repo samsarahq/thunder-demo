@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"sort"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/samsarahq/thunder/graphql"
@@ -16,35 +14,21 @@ import (
 	"github.com/jkomoros/sudoku"
 )
 
+var ErrNoRows = "sql: no rows in result set"
+
 type Server struct {
 	db *livesql.LiveDB
 }
 
-type Message struct {
+type Game struct {
 	Id   int64 `sql:",primary" graphql:",key"`
-	Text string
+	State	int32
+	Data string
 }
 
-var reactionTypes = map[string]bool{
-	":)": true,
-	":(": true,
-}
-
-type ReactionInstance struct {
-	Id        int64 `sql:",primary"`
-	MessageId int64
-	Reaction  string
-}
-
-type Reaction struct {
-	Reaction string `graphql:",key"`
-	Count    int
-}
-
-func generatePuzzle() (string) {
-	mutGrid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
-	grid := mutGrid.DataString()
-	return grid
+type Player struct {
+	Id int64 `sql:",primary" graphql:",key"`
+	Name string
 }
 
 func checkPuzzle(puzzle string) (bool) {
@@ -52,43 +36,19 @@ func checkPuzzle(puzzle string) (bool) {
 	return grid.Solved()
 }
 
-
-func (s *Server) registerMessage(schema *schemabuilder.Schema) {
-	object := schema.Object("Message", Message{})
-
-	object.Description = "A single message."
-
-	object.FieldFunc("reactions", func(ctx context.Context, m *Message) ([]*Reaction, error) {
-		reactions := make(map[string]*Reaction)
-		for reactionType := range reactionTypes {
-			reactions[reactionType] = &Reaction{
-				Reaction: reactionType,
-			}
-		}
-
-		var instances []*ReactionInstance
-		if err := s.db.Query(ctx, &instances, sqlgen.Filter{"message_id": m.Id}, nil); err != nil {
-			return nil, err
-		}
-		for _, instance := range instances {
-			reactions[instance.Reaction].Count++
-		}
-
-		var result []*Reaction
-		for _, reaction := range reactions {
-			result = append(result, reaction)
-		}
-		sort.Slice(result, func(a, b int) bool { return result[a].Reaction < result[b].Reaction })
-
-		return result, nil
-	})
-}
-
-func (s *Server) registerQuery(schema *schemabuilder.Schema) {
+func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
-	object.FieldFunc("messages", func(ctx context.Context) ([]*Message, error) {
-		var result []*Message
+	object.FieldFunc("game", func(ctx context.Context, args struct{ Id int64 }) (*Game, error) {
+		var result *Game
+		if err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil); err !=nil {
+			return nil, err
+		}
+		return result, nil
+	})
+
+	object.FieldFunc("games", func(ctx context.Context) ([]*Game, error) {
+		var result []*Game
 		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
 			return nil, err
 		}
@@ -96,26 +56,65 @@ func (s *Server) registerQuery(schema *schemabuilder.Schema) {
 	})
 }
 
-func (s *Server) registerMutation(schema *schemabuilder.Schema) {
+func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
+	object := schema.Query()
+
+	object.FieldFunc("player", func(ctx context.Context, args struct{ Id int64 }) (*Player, error) {
+		var result *Player
+		err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil)
+		if err.Error() == ErrNoRows {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	})
+
+	object.FieldFunc("players", func(ctx context.Context) ([]*Player, error) {
+		var result []*Player
+		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
+			return nil, err
+		}
+		return result, nil
+	})
+}
+
+func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("addMessage", func(ctx context.Context, args struct{ Text string }) error {
-		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text})
+	object.FieldFunc("createGame", func(ctx context.Context, args struct{ Data string }) error {
+		grid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
+		_, err := s.db.InsertRow(ctx, &Game{Data: grid.DataString()})
 		return err
 	})
 
-	object.FieldFunc("deleteMessage", func(ctx context.Context, args struct{ Id int64 }) error {
-		return s.db.DeleteRow(ctx, &Message{Id: args.Id})
-	})
-
-	object.FieldFunc("addReaction", func(ctx context.Context, args struct {
-		MessageId int64
-		Reaction  string
-	}) error {
-		if _, ok := reactionTypes[args.Reaction]; !ok {
-			return errors.New("reaction not allowed")
+	type updateGameArgs struct {
+		Id int64
+		Row int16
+		Col int16
+		Val int16
+	}
+	object.FieldFunc("updateGame", func(ctx context.Context, args updateGameArgs) error {
+		var game *Game
+		if err := s.db.QueryRow(ctx, &game, sqlgen.Filter{"id": args.Id}, nil); err != nil {
+			return err
 		}
-		_, err := s.db.InsertRow(ctx, &ReactionInstance{MessageId: args.MessageId, Reaction: args.Reaction})
+
+		grid := sudoku.MutableLoadSDK(game.Data)
+		grid.MutableCell(int(args.Row),int(args.Col)).SetNumber(int(args.Val))
+		game.Data = grid.DataString()
+
+		err := s.db.UpdateRow(ctx, game)
+		return err
+	})
+}
+
+func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
+	object := schema.Mutation()
+
+	object.FieldFunc("createPlayer", func(ctx context.Context, args struct{ Name string }) error {
+		_, err := s.db.InsertRow(ctx, &Player{Name: args.Name})
 		return err
 	})
 }
@@ -123,9 +122,10 @@ func (s *Server) registerMutation(schema *schemabuilder.Schema) {
 func (s *Server) SchemaBuilderSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
 
-	s.registerQuery(schema)
-	s.registerMutation(schema)
-	s.registerMessage(schema)
+	s.registerGameQueries(schema)
+	s.registerGameMutations(schema)
+	s.registerPlayerQueries(schema)
+	s.registerPlayerMutations(schema)
 
 	return schema
 }
@@ -136,10 +136,10 @@ func (s *Server) Schema() *graphql.Schema {
 
 func main() {
 	sqlgenSchema := sqlgen.NewSchema()
-	sqlgenSchema.MustRegisterType("messages", sqlgen.AutoIncrement, Message{})
-	sqlgenSchema.MustRegisterType("reaction_instances", sqlgen.AutoIncrement, ReactionInstance{})
+	sqlgenSchema.MustRegisterType("games", sqlgen.AutoIncrement, Game{})
+	sqlgenSchema.MustRegisterType("players", sqlgen.AutoIncrement, Player{})
 
-	db, err := livesql.Open("localhost", 3307, "root", "", "chat", sqlgenSchema)
+	db, err := livesql.Open("localhost", 3307, "root", "", "sudoku", sqlgenSchema)
 	if err != nil {
 		panic(err)
 	}
