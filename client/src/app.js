@@ -5,25 +5,7 @@ import './app.css'
 import SudokuBoard from "./board";
 import Chat from './chat'
 
-window.arrayToPuzzle = (arr) => {
-  let output = "";
-  arr.forEach((r, i) => {
-    r.forEach((c, j) => {
-      output += (c === null) ? "." : '' + c;
-      if (j < r.length - 1)
-        output += '|';
-    });
-    if (i < arr.length - 1) {
-      output += "\n";
-    }
-  });
-  return output
-}
-
-//let testPuzzle = "6|.|.|.|.|3|.|.|9\n.|.|4|.|1|.|6|.|7\n1|.|.|.|.|.|.|.|.\n.|.|.|4|.|9|.|5|.\n.|2|.|.|.|.|.|7|.\n9|.|7|.|.|.|8|.|4\n.|9|.|.|8|.|.|.|.\n.|8|.|3|.|2|.|9|.\n.|.|.|.|.|.|5|2|.";
-//console.log(testPuzzle === window.arrayToPuzzle(window.puzzleToArray(testPuzzle)));
-
-let Sudoku = function(props) {
+const Sudoku = function(props) {
   const { game, messages } = props.data.value;
   return (
     <div className="app-container">
@@ -41,7 +23,7 @@ let Sudoku = function(props) {
   );
 }
 
-Sudoku = connectGraphQL(Sudoku, (props) => ({
+const ConnectedSudoku = connectGraphQL(Sudoku, (props) => ({
   query: `
   {
     game(id: $id) {
@@ -72,11 +54,11 @@ function App() {
   if (pathname === "/graphiql") {
     return <GraphiQLWithFetcher />;
   } else if (!isNaN(gameId)) {
-    return <Sudoku id={gameId}/>
+    return <ConnectedSudoku id={gameId}/>
   } 
   else {
     window.location.pathname = "/1";
-    return <Sudoku id={1}/>
+    return <ConnectedSudoku id={1}/>
   }
 }
 

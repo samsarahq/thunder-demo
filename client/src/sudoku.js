@@ -1,7 +1,6 @@
 // sudoku validator adopted from https://gist.github.com/0xsven/5cea8fc8c7e794554419
 
 export const getValidCells = (board) => {
-
     let _rows, _cols, _grid, validCells;
 
     board = board.map((row, r) => {
@@ -73,4 +72,32 @@ export const getValidCells = (board) => {
     _validate(_grid);
 
     return validCells;
+}
+
+export const arrayToPuzzle = (arr) => {
+    let output = "";
+    arr.forEach((r, i) => {
+      r.forEach((c, j) => {
+        output += (c === null) ? "." : '' + c;
+        if (j < r.length - 1)
+          output += '|';
+      });
+      if (i < arr.length - 1) {
+        output += "\n";
+      }
+    });
+    return output
+}
+
+export const puzzleToArray = (puzzle) => {
+    let rows = puzzle.split("\n");
+    return rows.map((r) => {
+        let cols = r.split("|");
+        return cols.map((c)=> {
+        if (c === ".") {
+            return null;
+        }
+        return parseInt(c, 10);
+        });
+    });
 }

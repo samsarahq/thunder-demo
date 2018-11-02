@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 import { mutate } from 'thunder-react';
-import {getValidCells} from './sudoku';
+import { getValidCells, puzzleToArray } from './sudoku';
 import './board.css'
 
 const WIDTH = 9;
@@ -18,19 +18,6 @@ export default class SudokuBoard extends React.Component {
       y: 0,
     }
   }
-
-  puzzleToArray = (puzzle) => {
-  let rows = puzzle.split("\n");
-  return rows.map((r) => {
-    let cols = r.split("|");
-    return cols.map((c)=> {
-      if (c === ".") {
-        return null;
-      }
-      return parseInt(c, 10);
-    });
-  });
-}
   
   componentWillMount() {
     document.addEventListener('keydown',this.handleKeyDown)
@@ -79,8 +66,8 @@ export default class SudokuBoard extends React.Component {
   }
 
   render() {
-    const stateBoard = this.puzzleToArray(this.props.stateBoard)
-    const initialBoard = this.puzzleToArray(this.props.initialBoard)
+    const stateBoard = puzzleToArray(this.props.stateBoard)
+    const initialBoard = puzzleToArray(this.props.initialBoard)
     const validBoard = getValidCells(stateBoard);
     return <div className="board">{stateBoard.map(
       (row, i) => <div className="row" key={i}>{
