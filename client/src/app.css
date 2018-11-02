@@ -1,0 +1,37 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+.game-container {
+  flex: 3;
+}
+
+.chat-container {
+  flex: 1;
+  border: 1px solid #888;
+  flex-direction: column;
+}
+
+.message {
+  display: flex;
+  padding: 1rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.message-delete {
+  margin-left: auto;
+}
+
+.editor {
+  align-self: flex-end;
+  display: flex;
+}
+
+.editor-input {
+  flex: 1;
+}
+
+.editor-submit {
+  margin-left: auto;
+}

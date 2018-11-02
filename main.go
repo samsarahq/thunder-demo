@@ -32,6 +32,11 @@ type Player struct {
 	Name string
 }
 
+type Message struct {
+	Id   int64 `sql:",primary" graphql:",key"`
+	Text string
+}
+
 func checkPuzzle(puzzle string) (bool) {
 	grid := sudoku.LoadSDK(puzzle)
 	return grid.Solved()
@@ -132,6 +137,31 @@ func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
 	})
 }
 
+func (s *Server) registerMessageQuery(schema *schemabuilder.Schema) {
+	object := schema.Query()
+
+	object.FieldFunc("messages", func(ctx context.Context) ([]*Message, error) {
+		var result []*Message
+		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
+			return nil, err
+		}
+		return result, nil
+	})
+}
+
+func (s *Server) registerMessageMutation(schema *schemabuilder.Schema) {
+	object := schema.Mutation()
+
+	object.FieldFunc("addMessage", func(ctx context.Context, args struct{ Text string }) error {
+		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text})
+		return err
+	})
+
+	object.FieldFunc("deleteMessage", func(ctx context.Context, args struct{ Id int64 }) error {
+		return s.db.DeleteRow(ctx, &Message{Id: args.Id})
+	})
+}
+
 func (s *Server) SchemaBuilderSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
 
@@ -139,6 +169,8 @@ func (s *Server) SchemaBuilderSchema() *schemabuilder.Schema {
 	s.registerGameMutations(schema)
 	s.registerPlayerQueries(schema)
 	s.registerPlayerMutations(schema)
+	s.registerMessageQuery(schema)
+	s.registerMessageMutation(schema)
 
 	return schema
 }
@@ -151,6 +183,7 @@ func main() {
 	sqlgenSchema := sqlgen.NewSchema()
 	sqlgenSchema.MustRegisterType("games", sqlgen.AutoIncrement, Game{})
 	sqlgenSchema.MustRegisterType("players", sqlgen.AutoIncrement, Player{})
+	sqlgenSchema.MustRegisterType("messages", sqlgen.AutoIncrement, Message{})
 
 	db, err := livesql.Open("localhost", 3307, "root", "", "sudoku", sqlgenSchema)
 	if err != nil {
