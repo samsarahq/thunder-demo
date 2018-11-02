@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -14,7 +15,9 @@ import (
 	"github.com/jkomoros/sudoku"
 )
 
-var ErrNoRows = "sql: no rows in result set"
+const (
+	DbName = "sudoku"
+)
 
 type Server struct {
 	db *livesql.LiveDB
@@ -68,7 +71,7 @@ func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 	object.FieldFunc("player", func(ctx context.Context, args struct{ Id int64 }) (*Player, error) {
 		var result *Player
 		err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil)
-		if err.Error() == ErrNoRows {
+		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		if err != nil {
@@ -185,7 +188,7 @@ func main() {
 	sqlgenSchema.MustRegisterType("players", sqlgen.AutoIncrement, Player{})
 	sqlgenSchema.MustRegisterType("messages", sqlgen.AutoIncrement, Message{})
 
-	db, err := livesql.Open("localhost", 3307, "root", "", "sudoku", sqlgenSchema)
+	db, err := livesql.Open("localhost", 3307, "root", "", DbName, sqlgenSchema)
 	if err != nil {
 		panic(err)
 	}
