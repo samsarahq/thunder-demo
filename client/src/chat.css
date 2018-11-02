@@ -1,0 +1,53 @@
+.chat-container {
+  flex: 1;
+  border: 1px solid #888;
+  flex-direction: column;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #333;
+  color: #fafafa;
+}
+
+.messages-container {
+  overflow-y: scroll;
+  flex: 1;
+}
+
+.message {
+  display: flex;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 1rem;
+  margin: 1rem;
+}
+
+.message-username {
+  color: #888;
+  font-style: italic;
+}
+
+.message-delete {
+  margin-left: auto;
+  color: #ccc;
+  flex: 0 0 auto;
+}
+
+.editor {
+  align-self: flex-end;
+  display: flex;
+  margin-top: auto;
+  height: 4rem;
+}
+
+.editor-input {
+  flex: 1;
+}
+
+.editor-submit {
+  margin-left: auto;
+}
