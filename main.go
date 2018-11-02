@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"log"
 	"time"
+	"strconv"
 	"sync"
 	"encoding/json"
 	"os"
@@ -26,17 +27,13 @@ import (
 
 const (
 	DbName = "sudoku"
+	PlayerIdCtxKey = "playerId"
 )
 
 type (
 	PlayerColor string
-)
-
-type (
 	PlayerName string
 )
-
-var SuperheroNames []PlayerName
 
 var (
 	// Set of A100 from https://material.io/design/color/#tools-for-picking-colors
@@ -58,11 +55,12 @@ var (
 		"#FFAB40",
 		"#FF6E40",
 	}
+	SuperheroNames []PlayerName
 )
 
 type Server struct {
 	db *livesql.LiveDB
-	playerStateMap map[string]*PlayerState
+	playerStateMap map[int64]*PlayerState
 	playerStateMu sync.Mutex
 }
 
@@ -76,7 +74,7 @@ type Game struct {
 
 // For a single game.
 type PlayerState struct {
-	PlayerId string
+	PlayerId int64
 	Color PlayerColor
 	Name PlayerName
 	X int64
@@ -132,6 +130,13 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
+	object.FieldFunc("currentPlayer", func(ctx context.Context) *PlayerState {
+		playerId := PlayerId(ctx)
+		if playerId == nil {
+			return nil
+		}
+		return s.playerStateMap[*playerId]
+	})
 	object.FieldFunc("player", func(ctx context.Context, args struct{ Id int64 }) (*Player, error) {
 		var result *Player
 		err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil)
@@ -239,6 +244,20 @@ func (s *Server) registerMessageMutation(schema *schemabuilder.Schema) {
 	})
 }
 
+func PlayerId(ctx context.Context) *int64 {
+	val := ctx.Value(PlayerIdCtxKey)
+	if val == nil {
+		return nil
+	}
+	return val.(*int64)
+}
+
+func int64Ptr(i int64) *int64 { return &i }
+
+func WithPlayerId(ctx context.Context, playerId int64) context.Context {
+	return context.WithValue(ctx, PlayerIdCtxKey, int64Ptr(playerId))
+}
+
 func (s *Server) SchemaBuilderSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
 
@@ -256,7 +275,7 @@ func (s *Server) Schema() *graphql.Schema {
 	return s.SchemaBuilderSchema().MustBuild()
 }
 
-func (s *Server) newPlayerState(id string) *PlayerState {
+func (s *Server) newPlayerState(id int64) *PlayerState {
 	return &PlayerState{
 		PlayerId: id,
 		Color: AssignablePlayerColors[rand.Intn(len(AssignablePlayerColors))],
@@ -264,14 +283,14 @@ func (s *Server) newPlayerState(id string) *PlayerState {
 	}
 }
 
-func (s *Server) AddPlayerToStateMap(id string) {
+func (s *Server) AddPlayerToStateMap(id int64) {
 	s.playerStateMu.Lock()
 	defer s.playerStateMu.Unlock()
 
 	s.playerStateMap[id] = s.newPlayerState(id)
 }
 
-func (s *Server) RemovePlayerFromStateMap(id string) {
+func (s *Server) RemovePlayerFromStateMap(id int64) {
 	s.playerStateMu.Lock()
 	defer s.playerStateMu.Unlock()
 
@@ -290,13 +309,22 @@ type subscriptionLogger struct{
 }
 
 func (l *subscriptionLogger) Subscribe(ctx context.Context, id string, tags map[string]string) {
-	log.Println("~~ Subscribe", id, tags)
-	l.server.AddPlayerToStateMap(id)
+	intId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		panic("error parsing subscription id")
+	}
+
+	log.Println("~~ Subscribe", intId, tags)
+	l.server.AddPlayerToStateMap(intId)
 }
 
 func (l *subscriptionLogger) Unsubscribe(ctx context.Context, id string) {
-	log.Println("~~ Unsubscribe", id)
-	l.server.RemovePlayerFromStateMap(id)
+	intId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		panic("error parsing subscription id")
+	}
+	log.Println("~~ Unsubscribe", intId)
+	l.server.RemovePlayerFromStateMap(intId)
 }
 
 func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Handler {
@@ -317,6 +345,15 @@ func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Hand
 		defer socket.Close()
 
 		conn := graphql.CreateConnection(r.Context(), socket, schema, graphql.WithExecutionLogger(&executionLogger{}), graphql.WithSubscriptionLogger(&subscriptionLogger{server: server}))
+		storePlayerIdMiddleware := func(input *graphql.ComputationInput, next graphql.MiddlewareNextFunc) *graphql.ComputationOutput {
+			intId, err := strconv.ParseInt(input.Id, 10, 64)
+			if err != nil {
+				panic("error parsing subscription id")
+			}
+			input.Ctx = WithPlayerId(input.Ctx, intId)
+			return next(input)
+		}
+		conn.Use(storePlayerIdMiddleware)
 		conn.ServeJSONSocket()
 	})
 }
@@ -345,17 +382,16 @@ func main() {
 		panic(err)
 	}
 
-	log.Println("== STARTED ==")
-
 	server := &Server{
 		db: db,
-		playerStateMap: make(map[string]*PlayerState),
+		playerStateMap: make(map[int64]*PlayerState),
 	}
 	graphqlSchema := server.Schema()
 	introspection.AddIntrospectionToSchema(graphqlSchema)
 
 	http.Handle("/graphql", handlerWithPlayerTracking(graphqlSchema, server))
 	http.Handle("/graphiql/", http.StripPrefix("/graphiql/", graphiql.Handler()))
+	log.Println("== STARTED ==")
 	if err := http.ListenAndServe(":3030", nil); err != nil {
 		panic(err)
 	}
