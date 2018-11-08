@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
-	"github.com/jkomoros/sudoku"
 	"github.com/samsarahq/thunder/graphql"
 	"github.com/samsarahq/thunder/graphql/graphiql"
 	"github.com/samsarahq/thunder/graphql/introspection"
@@ -27,14 +25,6 @@ type Server struct {
 	db *livesql.LiveDB
 }
 
-type Game struct {
-	Id     int64 `sql:",primary" graphql:",key"`
-	State  string
-	Data   string
-	Name   string
-	Solved bool
-}
-
 type Message struct {
 	Id   int64 `sql:",primary" graphql:",key"`
 	SentBy PlayerName
@@ -42,40 +32,15 @@ type Message struct {
 	Text string
 }
 
-func checkPuzzle(puzzle string) bool {
-	grid := sudoku.LoadSDK(puzzle)
-	return grid.Solved()
-}
-
 func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
-	object.FieldFunc("game", func(ctx context.Context, args struct{ Id int64 }) (*Game, error) {
-		var result *Game
-		if err := s.db.QueryRow(ctx, &result, sqlgen.Filter{"id": args.Id}, nil); err != nil {
-			return nil, err
-		}
-		return result, nil
-	})
-
-	object.FieldFunc("games", func(ctx context.Context) ([]*Game, error) {
-		var result []*Game
-		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
-			return nil, err
-		}
-		return result, nil
-	})
+	object.FieldFunc("game", s.GetGameById)
+	object.FieldFunc("games", s.GetAllGames)
 
 	// Game Field Funcs
 	object = schema.Object("Game", Game{})
-	// TODO: track mutations to player focus in backend
-	object.FieldFunc("players", func(ctx context.Context, g *Game) ([]*Player, error) {
-		var result []*Player
-		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
-			return nil, err
-		}
-		return result, nil
-	})
+	object.FieldFunc("players", s.GetPlayersForGame)
 }
 
 func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
@@ -89,53 +54,8 @@ func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("createGame", func(ctx context.Context, args struct{ Name string }) (*Game, error) {
-		grid := sudoku.GenerateGrid(sudoku.DefaultGenerationOptions())
-		gridString := grid.DataString()
-		game := Game{Name: args.Name, Data: gridString, State: gridString}
-		res, err := s.db.InsertRow(ctx, &game)
-		if err != nil {
-			return nil, err
-		}
-
-		lastInsertId, err := res.LastInsertId()
-		if err != nil {
-			return nil, err
-		}
-
-		game.Id = lastInsertId
-		return &game, nil
-	})
-
-	type updateGameArgs struct {
-		Id  int64
-		Row int16
-		Col int16
-		Val int16
-	}
-	object.FieldFunc("updateGame", func(ctx context.Context, args updateGameArgs) error {
-		var game *Game
-		if err := s.db.QueryRow(ctx, &game, sqlgen.Filter{"id": args.Id}, nil); err != nil {
-			return err
-		}
-		if game.Solved {
-			return nil
-		}
-		var r, c = int(args.Row), int(args.Col)
-		if origState := sudoku.LoadSDK(game.Data).Cell(r, c).Number(); origState != 0 {
-			return errors.New("Can't change original cell")
-		}
-
-		grid := sudoku.MutableLoadSDK(game.State)
-		grid.MutableCell(r, c).SetNumber(int(args.Val))
-		if grid.Solved() {
-			game.Solved = true
-		}
-		game.State = grid.DataString()
-
-		err := s.db.UpdateRow(ctx, game)
-		return err
-	})
+	object.FieldFunc("createGame", s.CreateGame)
+	object.FieldFunc("updateGame", s.UpdateGame)
 }
 
 func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
