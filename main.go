@@ -25,13 +25,6 @@ type Server struct {
 	db *livesql.LiveDB
 }
 
-type Message struct {
-	Id   int64 `sql:",primary" graphql:",key"`
-	SentBy PlayerName
-	Color PlayerColor
-	Text string
-}
-
 func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
@@ -68,28 +61,15 @@ func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
 func (s *Server) registerMessageQuery(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
-	object.FieldFunc("messages", func(ctx context.Context) ([]*Message, error) {
-		var result []*Message
-		if err := s.db.Query(ctx, &result, nil, nil); err != nil {
-			return nil, err
-		}
-		return result, nil
-	})
+	object.FieldFunc("messages", s.GetMessages)
 }
 
 func (s *Server) registerMessageMutation(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("addMessage", func(ctx context.Context, args struct{ Text string; SentBy PlayerName; Color PlayerColor }) error {
-		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text, SentBy: args.SentBy, Color: args.Color})
-		return err
-	})
-
-	object.FieldFunc("deleteMessage", func(ctx context.Context, args struct{ Id int64 }) error {
-		return s.db.DeleteRow(ctx, &Message{Id: args.Id})
-	})
+	object.FieldFunc("addMessage", s.AddMessage)
+	object.FieldFunc("deleteMessage", s.DeleteMessage)
 }
-
 
 func int64Ptr(i int64) *int64 { return &i }
 
