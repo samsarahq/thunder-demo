@@ -27,7 +27,6 @@ type Server struct {
 
 func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
-
 	object.FieldFunc("game", s.GetGameById)
 	object.FieldFunc("games", s.GetAllGames)
 
@@ -38,7 +37,6 @@ func (s *Server) registerGameQueries(schema *schemabuilder.Schema) {
 
 func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 	object := schema.Query()
-
 	object.FieldFunc("currentPlayer", s.GetCurrentPlayer)
 	object.FieldFunc("player", s.GetPlayerById)
 	object.FieldFunc("players", s.GetPlayers)
@@ -46,36 +44,29 @@ func (s *Server) registerPlayerQueries(schema *schemabuilder.Schema) {
 
 func (s *Server) registerGameMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
-
 	object.FieldFunc("createGame", s.CreateGame)
 	object.FieldFunc("updateGame", s.UpdateGame)
 }
 
 func (s *Server) registerPlayerMutations(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
-
 	object.FieldFunc("createPlayer", s.CreatePlayer)
 	object.FieldFunc("updatePlayerSelection", s.UpdatePlayerSelection)
 }
 
 func (s *Server) registerMessageQuery(schema *schemabuilder.Schema) {
 	object := schema.Query()
-
 	object.FieldFunc("messages", s.GetMessages)
 }
 
 func (s *Server) registerMessageMutation(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
-
 	object.FieldFunc("addMessage", s.AddMessage)
 	object.FieldFunc("deleteMessage", s.DeleteMessage)
 }
 
-func int64Ptr(i int64) *int64 { return &i }
-
 func (s *Server) SchemaBuilderSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
-
 	s.registerGameQueries(schema)
 	s.registerGameMutations(schema)
 	s.registerPlayerQueries(schema)
@@ -90,23 +81,17 @@ func (s *Server) Schema() *graphql.Schema {
 	return s.SchemaBuilderSchema().MustBuild()
 }
 
+type executionLogger struct{}
 
-type executionLogger struct {}
 func (s *executionLogger) StartExecution(ctx context.Context, tags map[string]string, initial bool) {}
-func (s *executionLogger) FinishExecution(ctx context.Context, tags map[string]string, delay time.Duration) {}
+func (s *executionLogger) FinishExecution(ctx context.Context, tags map[string]string, delay time.Duration) {
+}
 func (s *executionLogger) Error(ctx context.Context, err error, tags map[string]string) {
 	log.Printf("error:%v\n%s", tags, err)
 }
 
-type subscriptionLogger struct{
+type subscriptionLogger struct {
 	server *Server
-}
-
-func PanicIfErr(err error) {
-	if err == nil {
-		return
-	}
-	panic(err.Error())
 }
 
 func (l *subscriptionLogger) Subscribe(ctx context.Context, id string, tags map[string]string) {
@@ -153,23 +138,20 @@ func handlerWithPlayerTracking(schema *graphql.Schema, server *Server) http.Hand
 		conn := graphql.CreateConnection(ctx, socket, schema, graphql.WithExecutionLogger(&executionLogger{}), graphql.WithSubscriptionLogger(&subscriptionLogger{server: server}))
 		conn.ServeJSONSocket()
 
-		err = server.db.DeleteRow(ctx, &Player{ Id: playerId })
+		err = server.db.DeleteRow(ctx, &Player{Id: playerId})
 		PanicIfErr(err)
 		log.Println("~~ deleted playerId", playerId)
 	})
 }
 
 func main() {
-
 	sqlgenSchema := sqlgen.NewSchema()
 	sqlgenSchema.MustRegisterType("games", sqlgen.AutoIncrement, Game{})
 	sqlgenSchema.MustRegisterType("players", sqlgen.AutoIncrement, Player{})
 	sqlgenSchema.MustRegisterType("messages", sqlgen.AutoIncrement, Message{})
 
 	db, err := livesql.Open("localhost", 3307, "root", "", DbName, sqlgenSchema)
-	if err != nil {
-		panic(err)
-	}
+	PanicIfErr(err)
 
 	server := &Server{
 		db: db,
