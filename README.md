@@ -1,3 +1,5 @@
+# Thundoku
+
 This directory contains a basic example of Thunder. The code is organized as follows:
 
 - All server code can be found in the `main.go` file.
@@ -8,6 +10,17 @@ This directory contains a basic example of Thunder. The code is organized as fol
 
 This example requires [Docker](https://docker.com), [Go](https://golang.org/),
 and [Node](https://nodejs.org/).
+
+Make sure the project is cloned into your `$GOPATH` and that `$GOPATH` is properly set.
+
+## Quickstart
+
+To quickly get started, the individual steps described later in the readme have been combined into a makefile.
+
+* To get set up, run `make setup`. This will install all server and client dependencies.
+* To start the database in the foreground, run `make db-start`. Run `make migrate-up` to setup the database's schema.
+* To start the server, run `make run-server`.
+* To start the client, run `make run-client`.
 
 ## Running the database
 
@@ -34,7 +47,7 @@ sudoku`. Try inserting a new message by running
 
 To run the server, first install the server's dependencies using
 `go get .`.
-Then, run `go run main.go` to start the server.
+Then, run `go run *.go` to start the server.
 
 ## Running the client
 
